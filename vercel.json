@@ -1,0 +1,16 @@
+{
+  "redirects": [
+    { "source": "/cryptography", "destination": "/cryptography/", "permanent": true },
+    { "source": "/90-day-plan", "destination": "/90-day-plan/", "permanent": true },
+    { "source": "/linux-bash", "destination": "/linux-bash/", "permanent": true },
+    { "source": "/networking-fundamentals", "destination": "/networking-fundamentals/", "permanent": true },
+    { "source": "/web-security-owasp", "destination": "/web-security-owasp/", "permanent": true }
+  ],
+  "rewrites": [
+    { "source": "/cryptography", "destination": "/cryptography/index.html" },
+    { "source": "/90-day-plan", "destination": "/90-day-plan/index.html" },
+    { "source": "/linux-bash", "destination": "/linux-bash/index.html" },
+    { "source": "/networking-fundamentals", "destination": "/networking-fundamentals/index.html" },
+    { "source": "/web-security-owasp", "destination": "/web-security-owasp/index.html" }
+  ]
+}

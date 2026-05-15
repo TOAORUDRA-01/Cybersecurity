@@ -1,14 +1,1665 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Cryptography Notes</title>
-    <meta http-equiv="refresh" content="0; url=../cryptography_notes.html" />
-  </head>
-  <body>
-    <p>
-      Redirecting to <a href="../cryptography_notes.html">cryptography notes</a>...
-    </p>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cryptography — Deep Dive Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Fira+Code:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   DESIGN SYSTEM — Deep Space Blueprint
+   ═══════════════════════════════════════════ */
+:root {
+  --void:     #050912;
+  --deep:     #080d1a;
+  --panel:    #0c1424;
+  --panel2:   #101b2e;
+  --panel3:   #152235;
+  --teal:     #00c8b4;
+  --teal2:    #00a898;
+  --teal3:    rgba(0,200,180,0.15);
+  --gold:     #d4a847;
+  --gold2:    #f0c060;
+  --gold3:    rgba(212,168,71,0.12);
+  --rose:     #e85c7a;
+  --blue:     #4a9eff;
+  --blue2:    #2d7dd2;
+  --lavender: #a78bfa;
+  --text:     #c8d8e8;
+  --text2:    #8090a8;
+  --text3:    #4a5a6a;
+  --border:   rgba(0,200,180,0.12);
+  --border2:  rgba(0,200,180,0.28);
+  --border3:  rgba(212,168,71,0.20);
+  --serif:    'Crimson Pro', Georgia, serif;
+  --display:  'Cinzel', serif;
+  --mono:     'Fira Code', 'Courier New', monospace;
+  --sw: 280px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--void);
+  color: var(--text);
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.75;
+  overflow-x: hidden;
+}
+
+/* Star field background */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 30% 80%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 15%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 80% 60%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 35%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 45% 70%, rgba(255,255,255,0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 15% 55%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 90%, rgba(255,255,255,0.2) 0%, transparent 100%);
+  pointer-events: none; z-index: 0;
+}
+
+/* Blueprint grid */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,200,180,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,200,180,0.018) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none; z-index: 0;
+}
+
+/* ═══════════ SIDEBAR ═══════════════════════ */
+.sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0;
+  width: var(--sw);
+  background: var(--deep);
+  border-right: 1px solid var(--border);
+  z-index: 200;
+  overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.sidebar::-webkit-scrollbar { width: 3px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--teal3); }
+
+.sb-crown {
+  padding: 28px 22px 22px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.sb-crown::after {
+  content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, var(--teal), var(--gold), transparent);
+}
+.sb-eyebrow {
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: .22em; color: var(--teal2);
+  text-transform: uppercase; margin-bottom: 10px;
+}
+.sb-title {
+  font-family: var(--display);
+  font-size: 18px; font-weight: 700;
+  color: var(--gold2); letter-spacing: .06em;
+  line-height: 1.2;
+  text-shadow: 0 0 30px rgba(212,168,71,0.3);
+}
+.sb-sub {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text3); margin-top: 6px;
+  letter-spacing: .05em;
+}
+
+.sb-group {
+  padding: 16px 0 4px;
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: .22em; color: var(--text3);
+  text-transform: uppercase; padding-left: 22px;
+}
+.sb-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 22px; cursor: pointer;
+  font-family: var(--serif); font-size: 13px;
+  color: var(--text2); transition: all .15s;
+  border-left: 2px solid transparent;
+  font-weight: 400;
+}
+.sb-link:hover { color: var(--teal); background: rgba(0,200,180,0.04); }
+.sb-link.active { color: var(--teal); border-left-color: var(--teal); background: rgba(0,200,180,0.07); }
+.sb-n { font-family: var(--mono); font-size: 10px; color: var(--text3); min-width: 20px; }
+
+.sb-footer {
+  margin-top: auto; padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  font-family: var(--mono); font-size: 10px;
+  color: var(--text3); line-height: 1.9;
+}
+
+/* ═══════════ MAIN ══════════════════════════ */
+.main { margin-left: var(--sw); position: relative; z-index: 1; }
+
+/* ═══════════ HERO ══════════════════════════ */
+.hero {
+  min-height: 340px;
+  padding: 60px 68px 52px;
+  background: var(--deep);
+  border-bottom: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.hero-orb {
+  position: absolute; right: 80px; top: 50%; transform: translateY(-50%);
+  width: 280px; height: 280px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,200,180,0.08) 0%, rgba(212,168,71,0.05) 40%, transparent 70%);
+  border: 1px solid rgba(0,200,180,0.1);
+  animation: orbPulse 4s ease-in-out infinite;
+}
+.hero-orb::before {
+  content: ''; position: absolute; inset: 20px; border-radius: 50%;
+  border: 1px dashed rgba(0,200,180,0.15);
+  animation: spin 20s linear infinite;
+}
+.hero-orb::after {
+  content: ''; position: absolute; inset: 50px; border-radius: 50%;
+  border: 1px dashed rgba(212,168,71,0.12);
+  animation: spin 14s linear infinite reverse;
+}
+@keyframes orbPulse { 0%,100%{opacity:.7} 50%{opacity:1} }
+@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .2em; text-transform: uppercase;
+  color: var(--teal2); margin-bottom: 20px;
+}
+.hero-tag::before {
+  content: ''; width: 24px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--teal2));
+}
+.hero h1 {
+  font-family: var(--display);
+  font-size: clamp(34px, 5vw, 58px); font-weight: 700;
+  color: #fff; letter-spacing: .04em;
+  line-height: 1.05; margin-bottom: 14px;
+}
+.hero h1 em { color: var(--gold2); font-style: italic; font-family: var(--serif); }
+.hero-lead {
+  font-size: 15px; color: var(--text2); font-weight: 300;
+  max-width: 520px; line-height: 1.75; margin-top: 12px;
+  font-style: italic;
+}
+.hero-stats {
+  display: flex; gap: 36px; margin-top: 36px; flex-wrap: wrap;
+}
+.hs { }
+.hs-val { font-family: var(--display); font-size: 26px; color: var(--teal); letter-spacing: .05em; }
+.hs-lbl { font-family: var(--mono); font-size: 9px; letter-spacing: .18em; color: var(--text3); text-transform: uppercase; margin-top: 2px; }
+
+/* ═══════════ SECTION ═══════════════════════ */
+.section {
+  padding: 56px 68px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.section:nth-child(even) { background: rgba(8,13,26,0.6); }
+
+.sec-label {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 10px;
+}
+.sec-num {
+  font-family: var(--display); font-size: 48px;
+  color: rgba(0,200,180,0.1); line-height: 1;
+  flex-shrink: 0; letter-spacing: .05em;
+}
+.sec-badge {
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--gold); border: 1px solid var(--border3);
+  padding: 3px 10px; background: var(--gold3);
+}
+.sec-title {
+  font-family: var(--display); font-size: 24px; font-weight: 600;
+  color: var(--gold2); letter-spacing: .06em; margin-bottom: 6px;
+  text-shadow: 0 0 40px rgba(212,168,71,0.2);
+}
+.sec-desc { font-size: 14px; color: var(--text2); font-weight: 300; font-style: italic; margin-bottom: 32px; max-width: 680px; }
+
+/* ═══════════ CARDS ═════════════════════════ */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  margin-bottom: 22px;
+  position: relative; overflow: hidden;
+}
+.card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, var(--teal3), rgba(212,168,71,0.12), transparent);
+}
+.card-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 20px; background: var(--panel2);
+  border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;
+}
+.card-hd h3 {
+  font-family: var(--display); font-size: 14px; font-weight: 600;
+  color: var(--teal); letter-spacing: .06em;
+}
+.card-tags { display: flex; gap: 6px; }
+.ct {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .12em;
+  text-transform: uppercase; padding: 2px 8px; border: 1px solid;
+}
+.ct-t { color: var(--teal2); border-color: rgba(0,200,180,0.25); }
+.ct-g { color: #5ec97a; border-color: rgba(94,201,122,0.25); }
+.ct-r { color: var(--rose); border-color: rgba(232,92,122,0.25); }
+.ct-b { color: var(--blue); border-color: rgba(74,158,255,0.25); }
+.ct-l { color: var(--lavender); border-color: rgba(167,139,250,0.25); }
+.card-chev { color: var(--text3); font-size: 11px; transition: transform .2s; margin-left: 8px; }
+.card.open .card-chev { transform: rotate(180deg); }
+.card-bd { padding: 22px 20px; display: none; }
+.card.open .card-bd, .card.always .card-bd { display: block; }
+
+/* ═══════════ CODE ══════════════════════════ */
+.code {
+  background: #040810;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--teal3);
+  margin: 14px 0; overflow: hidden;
+}
+.code-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 16px; background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+.code-dots { display: flex; gap: 5px; }
+.code-dots span { width: 8px; height: 8px; border-radius: 50%; }
+.cd-r { background: #e85c7a; }
+.cd-y { background: var(--gold); }
+.cd-g { background: #5ec97a; }
+.code-lang { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: .12em; text-transform: uppercase; }
+.copy-btn {
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+  background: none; border: 1px solid var(--border); padding: 2px 10px;
+  cursor: pointer; transition: all .15s; letter-spacing: .05em;
+}
+.copy-btn:hover { color: var(--teal); border-color: var(--teal3); }
+pre {
+  padding: 16px 20px; font-family: var(--mono); font-size: 12px;
+  line-height: 1.85; overflow-x: auto; color: var(--text);
+}
+pre::-webkit-scrollbar { height: 3px; }
+pre::-webkit-scrollbar-thumb { background: var(--teal3); }
+
+/* Syntax */
+.k  { color: var(--teal); }
+.s  { color: #5ec97a; }
+.c  { color: var(--text3); font-style: italic; }
+.v  { color: var(--gold2); }
+.t  { color: var(--blue); }
+.f  { color: var(--lavender); }
+.n  { color: var(--rose); }
+.o  { color: var(--text2); }
+
+/* ═══════════ DIAGRAMS ══════════════════════ */
+.diagram {
+  background: #040810;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--gold3);
+  padding: 18px 22px; margin: 14px 0;
+  font-family: var(--mono); font-size: 12px;
+  line-height: 1.85; overflow-x: auto;
+  white-space: pre; color: var(--text2);
+}
+.dh { color: var(--teal); font-weight: 600; }
+.dg { color: #5ec97a; }
+.dr { color: var(--rose); }
+.db { color: var(--blue); }
+.dy { color: var(--gold2); }
+.dl { color: var(--lavender); }
+.dd { color: var(--text3); }
+
+/* ═══════════ CALLOUTS ══════════════════════ */
+.note {
+  border-left: 2px solid; padding: 12px 18px;
+  margin: 14px 0; font-size: 13.5px; line-height: 1.7;
+  font-weight: 400;
+}
+.note-lbl {
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: .2em; text-transform: uppercase;
+  font-weight: 600; margin-bottom: 5px;
+}
+.nt { border-color: var(--teal); background: rgba(0,200,180,0.05); }
+.nt .note-lbl { color: var(--teal); }
+.ng { border-color: #5ec97a; background: rgba(94,201,122,0.05); }
+.ng .note-lbl { color: #5ec97a; }
+.nr { border-color: var(--rose); background: rgba(232,92,122,0.05); }
+.nr .note-lbl { color: var(--rose); }
+.ny { border-color: var(--gold); background: var(--gold3); }
+.ny .note-lbl { color: var(--gold2); }
+.nl { border-color: var(--lavender); background: rgba(167,139,250,0.05); }
+.nl .note-lbl { color: var(--lavender); }
+
+/* ═══════════ TABLES ════════════════════════ */
+.dt { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+.dt th {
+  background: var(--panel2); color: var(--teal2);
+  font-family: var(--display); font-weight: 600; font-size: 12px;
+  letter-spacing: .06em; padding: 10px 16px; text-align: left;
+  border-bottom: 1px solid var(--border2);
+}
+.dt td {
+  padding: 9px 16px; border-bottom: 1px solid var(--border);
+  vertical-align: top; color: var(--text); font-size: 13px;
+}
+.dt tr:hover td { background: rgba(0,200,180,0.03); }
+.mc { font-family: var(--mono); font-size: 11.5px; color: var(--teal2); }
+
+/* ═══════════ GRIDS ═════════════════════════ */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.g12 { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
+@media(max-width:900px) {
+  .g2,.g3,.g12 { grid-template-columns: 1fr; }
+  .main { margin-left: 0; }
+  .sidebar { display: none; }
+  .hero,.section { padding: 36px 24px; }
+}
+.mini {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 16px 18px;
+}
+.mini h4 {
+  font-family: var(--display); font-size: 13px; font-weight: 600;
+  color: var(--gold2); letter-spacing: .06em; margin-bottom: 10px;
+}
+.mini p, .mini li { font-size: 13px; color: var(--text2); line-height: 1.7; font-weight: 300; }
+
+/* ═══════════ CIPHER VISUAL ═════════════════ */
+.cipher-vis {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; margin: 18px 0; overflow-x: auto; flex-wrap: wrap;
+}
+.cv-group { display: flex; flex-direction: column; align-items: center; gap: 3px; margin: 0 1px; }
+.cv-char {
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 14px; font-weight: 600;
+  border: 1px solid; border-radius: 2px;
+  transition: all .3s;
+}
+.cv-plain { color: var(--teal); border-color: rgba(0,200,180,0.3); background: rgba(0,200,180,0.06); }
+.cv-cipher { color: var(--gold2); border-color: rgba(212,168,71,0.3); background: rgba(212,168,71,0.06); }
+.cv-lbl { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: .06em; }
+.cv-arrow { color: var(--text3); font-size: 20px; padding: 0 10px; align-self: center; }
+
+/* ═══════════ HASH VISUAL ═══════════════════ */
+.hash-flow {
+  display: flex; align-items: center; gap: 0; margin: 18px 0; overflow-x: auto;
+}
+.hf-box {
+  background: var(--panel2); border: 1px solid var(--border);
+  padding: 12px 18px; font-family: var(--mono); font-size: 11px;
+  line-height: 1.5; min-width: 130px; text-align: center;
+}
+.hf-box .hb-lbl { color: var(--text3); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 4px; }
+.hf-box .hb-val { color: var(--teal); word-break: break-all; font-size: 10px; }
+.hf-func {
+  background: var(--panel3); border: 1px solid var(--teal3);
+  padding: 12px 18px; font-family: var(--display); font-size: 12px;
+  color: var(--teal2); letter-spacing: .06em; text-align: center; min-width: 100px;
+}
+.hf-arrow { color: var(--text3); padding: 0 6px; font-size: 18px; flex-shrink: 0; align-self: center; }
+
+/* ═══════════ KEY EXCHANGE VISUAL ═══════════ */
+.ke-vis {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  gap: 0; align-items: start; margin: 18px 0;
+}
+.ke-party {
+  background: var(--panel2); border: 1px solid var(--border);
+  padding: 16px; text-align: center;
+}
+.ke-party h4 {
+  font-family: var(--display); font-size: 13px; color: var(--teal2);
+  letter-spacing: .06em; margin-bottom: 10px;
+}
+.ke-val { font-family: var(--mono); font-size: 11px; color: var(--gold2); margin: 4px 0; }
+.ke-lbl { font-family: var(--mono); font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .1em; }
+.ke-channel {
+  background: var(--panel3); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding: 16px 10px; min-width: 90px;
+}
+.ke-msg { font-family: var(--mono); font-size: 10px; color: var(--rose); text-align: center; line-height: 1.5; }
+
+/* ═══════════ MISC ══════════════════════════ */
+p { margin-bottom: 10px; color: var(--text2); font-size: 14px; font-weight: 300; }
+p:last-child { margin-bottom: 0; }
+strong { color: var(--text); font-weight: 500; }
+ul,ol { padding-left: 20px; margin: 8px 0; }
+li { margin-bottom: 5px; color: var(--text2); font-size: 13.5px; line-height: 1.7; font-weight: 300; }
+.mi { font-family: var(--mono); font-size: 11px; background: var(--panel); padding: 1px 6px; border: 1px solid var(--border); color: var(--teal2); }
+.tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.tpill { font-family: var(--mono); font-size: 9px; letter-spacing: .12em; padding: 3px 10px; border: 1px solid var(--border); color: var(--text3); }
+hr { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
+sub { font-size: 10px; }
+sup { font-size: 10px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<nav class="sidebar">
+  <div class="sb-crown">
+    <div class="sb-eyebrow">// cybersec notes · phase 2</div>
+    <div class="sb-title">CRYPTOGRAPHY</div>
+    <div class="sb-sub">deep dive · commands & code</div>
+  </div>
+
+  <div class="sb-group">Foundations</div>
+  <div class="sb-link active" onclick="go('s1',this)"><span class="sb-n">01</span>History & Principles</div>
+  <div class="sb-link" onclick="go('s2',this)"><span class="sb-n">02</span>Classical Ciphers</div>
+  <div class="sb-link" onclick="go('s3',this)"><span class="sb-n">03</span>Symmetric Encryption</div>
+  <div class="sb-link" onclick="go('s4',this)"><span class="sb-n">04</span>Asymmetric / PKC</div>
+
+  <div class="sb-group">Core Algorithms</div>
+  <div class="sb-link" onclick="go('s5',this)"><span class="sb-n">05</span>Hashing Functions</div>
+  <div class="sb-link" onclick="go('s6',this)"><span class="sb-n">06</span>Digital Signatures</div>
+  <div class="sb-link" onclick="go('s7',this)"><span class="sb-n">07</span>Key Exchange (DH)</div>
+  <div class="sb-link" onclick="go('s8',this)"><span class="sb-n">08</span>MAC & HMAC</div>
+
+  <div class="sb-group">Applied Crypto</div>
+  <div class="sb-link" onclick="go('s9',this)"><span class="sb-n">09</span>PKI & Certificates</div>
+  <div class="sb-link" onclick="go('s10',this)"><span class="sb-n">10</span>TLS / HTTPS</div>
+  <div class="sb-link" onclick="go('s11',this)"><span class="sb-n">11</span>Password Hashing</div>
+  <div class="sb-link" onclick="go('s12',this)"><span class="sb-n">12</span>Python Crypto Lab</div>
+
+  <div class="sb-group">Security</div>
+  <div class="sb-link" onclick="go('s13',this)"><span class="sb-n">13</span>Attacks on Crypto</div>
+  <div class="sb-link" onclick="go('s14',this)"><span class="sb-n">14</span>CTF Crypto & Ref</div>
+
+  <div class="sb-footer">
+    topics: 14 &nbsp;|&nbsp; algorithms: 25+<br>
+    python examples: 20+<br>
+    level: security+ / ctf
+  </div>
+</nav>
+
+<!-- ═══════════════════ MAIN ═══════════════════ -->
+<main class="main">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-orb"></div>
+  <div class="hero-tag">phase 2 · core security concepts</div>
+  <h1>The Art of<br><em>Secret Writing</em></h1>
+  <p class="hero-lead">A complete deep-dive reference spanning classical ciphers through modern TLS — symmetric & asymmetric encryption, hashing, digital signatures, PKI, password security, and cryptographic attacks. With 20+ Python code examples.</p>
+  <div class="hero-stats">
+    <div class="hs"><div class="hs-val">14</div><div class="hs-lbl">Topics</div></div>
+    <div class="hs"><div class="hs-val">25+</div><div class="hs-lbl">Algorithms</div></div>
+    <div class="hs"><div class="hs-val">20+</div><div class="hs-lbl">Code Examples</div></div>
+    <div class="hs"><div class="hs-val">CTF</div><div class="hs-lbl">Ready</div></div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     S1 · HISTORY & CORE PRINCIPLES
+══════════════════════════════════════════════════════ -->
+<section class="section" id="s1">
+  <div class="sec-label"><div class="sec-num">01</div><div class="sec-badge">foundations</div></div>
+  <div class="sec-title">HISTORY & CORE PRINCIPLES</div>
+  <p class="sec-desc">From Caesar's cipher to quantum-resistant algorithms — the evolution of secret communication, and the three pillars that govern all modern cryptography.</p>
+
+  <div class="tag-row">
+    <span class="tpill">CIA triad</span><span class="tpill">Kerckhoffs's principle</span>
+    <span class="tpill">confusion & diffusion</span><span class="tpill">perfect secrecy</span>
+  </div>
+
+  <div class="card always">
+    <div class="card-hd"><h3>THE THREE GOALS OF CRYPTOGRAPHY</h3><div class="card-tags"><span class="ct ct-t">core</span></div></div>
+    <div class="card-bd">
+      <div class="g3">
+        <div class="mini">
+          <h4>CONFIDENTIALITY</h4>
+          <p>Only authorised parties can read the data. Achieved via <strong>encryption</strong>. Even if intercepted, the ciphertext is unreadable without the key.</p>
+          <p style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--teal2)">→ AES, RSA, TLS</p>
+        </div>
+        <div class="mini">
+          <h4>INTEGRITY</h4>
+          <p>Data has not been tampered with in transit. Achieved via <strong>hashing + MACs</strong>. Any modification changes the hash/MAC — detectable.</p>
+          <p style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--gold2)">→ SHA-256, HMAC</p>
+        </div>
+        <div class="mini">
+          <h4>AUTHENTICITY</h4>
+          <p>Proves <em>who</em> sent the message. Achieved via <strong>digital signatures + PKI</strong>. Only the private key holder could have signed it.</p>
+          <p style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--lavender)">→ RSA-sig, ECDSA, X.509</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="c1b">
+    <div class="card-hd" onclick="tog('c1b')"><h3>KERCKHOFFS'S PRINCIPLE & SECURITY BY OBSCURITY</h3><div class="card-tags"><span class="ct ct-y">philosophy</span></div><span class="card-chev">▾</span></div>
+    <div class="card-bd">
+      <p><strong>Kerckhoffs's Principle (1883):</strong> A cryptosystem should be secure even if everything about the system, except the key, is public knowledge.</p>
+      <div class="note ny">
+        <div class="note-lbl">Why This Matters</div>
+        Modern algorithms like AES are fully public. Their source code, mathematics, and structure are all published. Security comes <em>entirely</em> from the key. This is the opposite of "security by obscurity" — which fails because secrets leak.
+      </div>
+      <table class="dt">
+        <tr><th>Concept</th><th>Definition</th><th>Example</th></tr>
+        <tr><td><strong>Confusion</strong></td><td>Each bit of ciphertext depends on many parts of the key (substitution)</td><td>S-boxes in AES</td></tr>
+        <tr><td><strong>Diffusion</strong></td><td>Changing one plaintext bit changes ~50% of ciphertext bits (permutation)</td><td>ShiftRows in AES</td></tr>
+        <tr><td><strong>Avalanche Effect</strong></td><td>Small change in input → drastically different output</td><td>SHA-256, AES</td></tr>
+        <tr><td><strong>Perfect Secrecy</strong></td><td>Ciphertext reveals zero information about plaintext — even with infinite compute</td><td>One-Time Pad (OTP)</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════
+     S2 · CLASSICAL CIPHERS
+══════════════════════════════════════════════════════ -->
+<section class="section" id="s2">
+  <div class="sec-label"><div class="sec-num">02</div><div class="sec-badge">historical</div></div>
+  <div class="sec-title">CLASSICAL CIPHERS</div>
+  <p class="sec-desc">Foundational substitution and transposition ciphers — still appear constantly in CTF challenges.</p>
+
+  <div class="card always">
+    <div class="card-hd"><h3>CAESAR CIPHER — Shift Cipher</h3><div class="card-tags"><span class="ct ct-t">CTF common</span></div></div>
+    <div class="card-bd">
+      <p>Each letter is shifted by a fixed number (key) in the alphabet. With key=3: A→D, B→E, etc. Only 25 possible keys — trivially brute-forced.</p>
+      <!-- Caesar visual -->
+      <div class="cipher-vis">
+        <div class="cv-group"><div class="cv-char cv-plain">H</div><div class="cv-lbl">plain</div></div>
+        <div class="cv-group"><div class="cv-char cv-cipher">K</div><div class="cv-lbl">+3</div></div>
+        <div style="width:10px"></div>
+        <div class="cv-group"><div class="cv-char cv-plain">E</div><div class="cv-lbl">plain</div></div>
+        <div class="cv-group"><div class="cv-char cv-cipher">H</div><div class="cv-lbl">+3</div></div>
+        <div style="width:10px"></div>
+        <div class="cv-group"><div class="cv-char cv-plain">L</div><div class="cv-lbl">plain</div></div>
+        <div class="cv-group"><div class="cv-char cv-cipher">O</div><div class="cv-lbl">+3</div></div>
+        <div style="width:10px"></div>
+        <div class="cv-group"><div class="cv-char cv-plain">L</div><div class="cv-lbl">plain</div></div>
+        <div class="cv-group"><div class="cv-char cv-cipher">O</div><div class="cv-lbl">+3</div></div>
+        <div style="width:10px"></div>
+        <div class="cv-group"><div class="cv-char cv-plain">O</div><div class="cv-lbl">plain</div></div>
+        <div class="cv-group"><div class="cv-char cv-cipher">R</div><div class="cv-lbl">+3</div></div>
+      </div>
+      <div class="code">
+        <div class="code-bar"><div class="code-dots"><span class="cd-r"></span><span class="cd-y"></span><span class="cd-g"></span></div><span class="code-lang">python</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="k">def</span> <span class="f">caesar</span>(text, shift):
+    result = <span class="s">""</span>
+    <span class="k">for</span> ch <span class="k">in</span> text:
+        <span class="k">if</span> ch.isalpha():
+            base = <span class="f">ord</span>(<span class="s">'A'</span>) <span class="k">if</span> ch.isupper() <span class="k">else</span> <span class="f">ord</span>(<span class="s">'a'</span>)
+            result += <span class="f">chr</span>(((<span class="f">ord</span>(ch) - base + shift) % <span class="v">26</span>) + base)
+        <span class="k">else</span>:
+            result += ch
+    <span class="k">return</span> result
+
+<span class="c"># Encrypt</span>
+<span class="f">print</span>(caesar(<span class="s">"Hello World"</span>, <span class="v">3</span>))   <span class="c"># → Khoor Zruog</span>
+
+<span class="c"># Brute force all 25 shifts</span>
+ciphertext = <span class="s">"Khoor Zruog"</span>
+<span class="k">for</span> shift <span class="k">in</span> <span class="f">range</span>(<span class="v">1</span>, <span class="v">26</span>):
+    <span class="f">print</span>(<span class="s">f"Shift {shift:2d}: {caesar(ciphertext, -shift)}"</span>)</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="c2b">
+    <div class="card-hd" onclick="tog('c2b')"><h3>ROT13, VIGENÈRE & ATBASH</h3><div class="card-tags"><span class="ct ct-t">CTF common</span></div><span class="card-chev">▾</span></div>
+    <div class="card-bd">
+      <div class="g2">
+        <div>
+          <p><strong>ROT13</strong> — Caesar with shift=13. Self-inverse: encode twice = original. Used in forums to hide spoilers. Very common in CTFs.</p>
+          <div class="code">
+            <div class="code-bar"><div class="code-dots"><span class="cd-r"></span><span class="cd-y"></span><span class="cd-g"></span></div><span class="code-lang">python</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+            <pre><span class="k">import</span> codecs
+encoded = codecs.encode(<span class="s">"Hello"</span>, <span class="s">'rot_13'</span>)
+<span class="f">print</span>(encoded)  <span class="c"># Uryyb</span>
+<span class="f">print</span>(codecs.encode(encoded, <span class="s">'rot_13'</span>))  <span class="c"># Hello</span></pre>
+          </div>
+        </div>
+        <div>
+          <p><strong>Vigenère</strong> — uses a keyword to vary the shift. Each letter of the key shifts the corresponding plaintext letter. Vulnerable to Kasiski analysis.</p>
+          <div class="code">
+            <div class="code-bar"><div class="code-dots"><span class="cd-r"></span><span class="cd-y"></span><span class="cd-g"></span></div><span class="code-lang">python</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+            <pre><span class="k">def</span> <span class="f">vigenere</span>(text, key, encrypt=<span class="k">True</span>):
+    result, ki = <span class="s">""</span>, <span class="v">0</span>
+    key = key.upper()
+    <span class="k">for</span> ch <span class="k">in</span> text.upper():
+        <span class="k">if</span> ch.isalpha():
+            shift = <span class="f">ord</span>(key[ki % <span class="f">len</span>(key)]) - <span class="v">65</span>
+            <span class="k">if not</span> encrypt: shift = <span class="v">-</span>shift
+            result += <span class="f">chr</span>(((<span class="f">ord</span>(ch) - <span class="v">65</span> + shift) % <span class="v">26</span>) + <span class="v">65</span>)
+            ki += <span class="v">1</span>
+        <span class="k">else</span>: result += ch
+    <span class="k">return</span> result
+
+<span class="f">print</span>(vigenere(<span class="s">"ATTACKATDAWN"</span>, <span class="s">"LEMON"</span>))
+<span class="c"># → LXFOPVEFRNHR</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="note nr" style="margin-top:14px">
+        <div class="note-lbl">Frequency Analysis</div>
+        Classical ciphers are defeated by frequency analysis: in English, 'E' appears ~12.7% of the time. If ciphertext letter 'X' appears ~12.7%, X likely maps to E. This is why modern ciphers must produce statistically uniform output.
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════
+     S3 · SYMMETRIC ENCRYPTION
+══════════════════════════════════════════════════════ -->
+<section class="section" id="s3">
+  <div class="sec-label"><div class="sec-num">03</div><div class="sec-badge">core algorithm</div></div>
+  <div class="sec-title">SYMMETRIC ENCRYPTION</div>
+  <p class="sec-desc">Same key encrypts and decrypts. Extremely fast — used for bulk data. The challenge: key distribution.</p>
+
+  <div class="diagram"><span class="dh">SYMMETRIC ENCRYPTION MODEL</span>
+
+<span class="dg">SENDER                      SHARED KEY                  RECEIVER</span>
+<span class="dh">┌──────────┐</span>              <span class="dy">┌───────────┐</span>              <span class="dh">┌──────────┐</span>
+<span class="dh">│ PLAINTEXT│</span>──encrypt───► <span class="dy">│  AES-256  │</span> ──decrypt──► <span class="dh">│ PLAINTEXT│</span>
+<span class="dh">└──────────┘</span>              <span class="dy">└───────────┘</span>              <span class="dh">└──────────┘</span>
+                                │
+                         <span class="dr">CIPHERTEXT (public channel)</span>
+                         <span class="dd">looks like: 3a7f9b2c4e8d1a6f...</span>
+
+<span class="dd">Problem: How do sender and receiver securely share the key?</span>
+<span class="dd">Answer: Use asymmetric crypto (RSA/ECDH) just for key exchange,</span>
+<span class="dd">        then use symmetric crypto (AES) for actual data.</span>
+<span class="dd">        This is exactly what TLS does.</span></div>
+
+  <div class="card always">
+    <div class="card-hd"><h3>AES — Advanced Encryption Standard</h3><div class="card-tags"><span class="ct ct-t">industry standard</span></div></div>
+    <div class="card-bd">
+      <p>AES is the gold standard symmetric cipher. Block cipher operating on 128-bit blocks, with key sizes of 128, 192, or 256 bits. Adopted by NIST in 2001, used in TLS, disk encryption, WiFi (WPA2), and more.</p>
+
+      <div class="g2">
+        <div>
+          <p><strong>AES Rounds by Key Size:</strong></p>
+          <table class="dt">
+            <tr><th>Key Size</th><th>Rounds</th><th>Security Level</th></tr>
+            <tr><td class="mc">AES-128</td><td>10</td><td>128-bit (~3.4×10³⁸)</td></tr>
+            <tr><td class="mc">AES-192</td><td>12</td><td>192-bit</td></tr>
+            <tr><td class="mc">AES-256</td><td>14</td><td>256-bit (recommended)</td></tr>
+          </table>
+          <p style="margin-top:12px"><strong>Each round:</strong> SubBytes → ShiftRows → MixColumns → AddRoundKey</p>
+        </div>
+        <div>
+          <p><strong>Block Cipher Modes — Critical to understand:</strong></p>
+          <table class="dt">
+            <tr><th>Mode</th><th>IV needed?</th><th>Security</th></tr>
+            <tr><td class="mc">ECB</td><td>No</td><td class="mc" style="color:var(--rose)">BROKEN — don't use</td></tr>
+            <tr><td class="mc">CBC</td><td>Yes</td><td>OK (padding oracle risk)</td></tr>
+            <tr><td class="mc">CTR</td><td>Yes (nonce)</td><td>Good (stream mode)</td></tr>
+            <tr><td class="mc">GCM</td><td>Yes (nonce)</td><td class="mc" style="color:#5ec97a">Best — AEAD</td></tr>
+            <tr><td class="mc">CCM</td><td>Yes (nonce)</td><td>Good — AEAD</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="code">
+        <div class="code-bar"><div class="code-dots"><span class="cd-r"></span><span class="cd-y"></span><span class="cd-g"></span></div><span class="code-lang">python — AES-GCM encryption</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="k">from</span> cryptography.hazmat.primitives.ciphers.aead <span class="k">import</span> AESGCM
+<span class="k">import</span> os
+
+<span class="c"># Generate a random 256-bit key</span>
+key = os.urandom(<span class="v">32</span>)        <span class="c"># 32 bytes = 256 bits</span>
+nonce = os.urandom(<span class="v">12</span>)      <span class="c"># 12 bytes for GCM nonce</span>
+
+aesgcm = AESGCM(key)
+
+<span class="c"># Encrypt (optional: associated data for authentication)</span>
+plaintext = <span class="s">b"SECRET MESSAGE"</span>
+aad = <span class="s">b"header data"</span>         <span class="c"># authenticated but NOT encrypted</span>
+ciphertext = aesgcm.encrypt(nonce, plaintext, aad)
+<span class="f">print</span>(<span class="s">f"Ciphertext: {ciphertext.hex()}"</span>)
+
+<span class="c"># Decrypt (raises InvalidTag if tampered)</span>
+recovered = aesgcm.decrypt(nonce, ciphertext, aad)
+<span class="f">print</span>(<span class="s">f"Decrypted:  {recovered.decode()}"</span>)
+
+<span class="c"># Install: pip install cryptography</span></pre>
+      </div>
+
+      <div class="note nr">
+        <div class="note-lbl">ECB Mode — The Penguin Problem</div>
+        ECB encrypts each 128-bit block independently. <strong>Identical plaintext blocks produce identical ciphertext blocks.</strong> Encrypting a bitmap image with ECB preserves patterns — the structure of the image is visible in the ciphertext. Never use ECB. Always use GCM or CTR.
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="c3b">
+    <div class="card-hd" onclick="tog('c3b')"><h3>Stream Ciphers & XOR — The Building Block</h3><div class="card-tags"><span class="ct ct-l">theory</span></div><span class="card-chev">▾</span></div>
+    <div class="card-bd">
+      <p>Stream ciphers encrypt one bit/byte at a time by XORing plaintext with a pseudorandom keystream. CTR mode turns AES into a stream cipher.</p>
+      <div class="code">
+        <div class="code-bar"><div class="code-dots"><span class="cd-r"></span><span class="cd-y"></span><span class="cd-g"></span></div><span class="code-lang">python — XOR cipher fundamentals</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="c"># XOR Properties:</span>
+<span class="c"># A XOR B = C    (encrypt)</span>
+<span class="c"># C XOR B = A    (decrypt — same operation!)</span>
+<span class="c"># A XOR A = 0    (XOR with itself = zero)</span>
+<span class="c"># A XOR 0 = A    (XOR with zero = unchanged)</span>
+
+<span class="k">def</span> <span class="f">xor_cipher</span>(data: bytes, key: bytes) -> bytes:
+    <span class="k">return</span> <span class="f">bytes</span>(a ^ b <span class="k">for</span> a, b <span class="k">in</span> <span class="f">zip</span>(data, (key * (<span class="f">len</span>(data)//<span class="f">len</span>(key)+<span class="v">1</span>))[:len(data)]))
+
+msg = <span class="s">b"ATTACK AT DAWN"</span>
+key = <span class="s">b"SECRET"</span>
+ct  = <span class="f">xor_cipher</span>(msg, key)
+pt  = <span class="f">xor_cipher</span>(ct, key)   <span class="c"># same function = decryption</span>
+<span class="f">print</span>(pt)  <span class="c"># b'ATTACK AT DAWN'</span>
+
+<span class="c"># CTF: if two messages encrypted with SAME key:</span>
+<span class="c"># CT1 XOR CT2 = PT1 XOR PT2  (key cancels out!)</span>
+<span class="c"># This is the "two-time pad" vulnerability</span>
+ct1 = <span class="f">xor_cipher</span>(<span class="s">b"Hello World!!"</span>, key)
+ct2 = <span class="f">xor_cipher</span>(<span class="s">b"Secret Msg!!!"</span>, key)
+combined = <span class="f">bytes</span>(a ^ b <span class="k">for</span> a,b <span class="k">in</span> <span class="f">zip</span>(ct1, ct2))
+<span class="f">print</span>(combined.hex())  <span class="c"># leaks XOR of both plaintexts!</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════
+     S4 · ASYMMETRIC / PUBLIC KEY CRYPTOGRAPHY
+══════════════════════════════════════════════════════ -->
+<section class="section" id="s4">
+  <div class="sec-label"><div class="sec-num">04</div><div class="sec-badge">public key</div></div>
+  <div class="sec-title">ASYMMETRIC ENCRYPTION</div>
+  <p class="sec-desc">Two mathematically linked keys — one public, one private. Solves the key distribution problem. Slower than symmetric, so used only for key exchange and signatures.</p>
+
+  <div class="diagram"><span class="dh">ASYMMETRIC ENCRYPTION — Two Keys, One Pair</span>
+
+<span class="dg">Alice generates key pair:</span>
+  <span class="dg">Public Key</span>  → <span class="dy">shared freely with anyone</span>       <span class="dd">(lock anyone can close)</span>
+  <span class="dh">Private Key</span> → <span class="dr">NEVER shared, kept secret</span>          <span class="dd">(key only Alice has)</span>
+
+<span class="dh">Encryption (Bob → Alice):</span>
+  Bob uses <span class="dg">Alice's PUBLIC key</span> to encrypt   → only Alice's private key can decrypt
+
+<span class="dh">Digital Signature (Alice → Bob):</span>
+  Alice uses <span class="dr">her PRIVATE key</span> to sign       → anyone with public key can verify
+
+<span class="dd">Mathematics: easy to compute, computationally infeasible to reverse</span>
+  <span class="dy">RSA:     factoring large primes (n = p × q, hard to reverse)</span>
+  <span class="dy">ECC:     elliptic curve discrete logarithm problem</span>
+  <span class="dy">DH/ECDH: discrete logarithm problem</span></div>
+
+  <div class="card always">
+    <div class="card-hd"><h3>RSA — Rivest–Shamir–Adleman</h3><div class="card-tags"><span class="ct ct-b">most studied</span></div></div>
+    <div class="card-bd">
+      <p>RSA security is based on the difficulty of factoring the product of two large primes. Key generation: pick two large primes p, q → n = p×q → compute totient φ(n) = (p-1)(q-1) → choose e (public exponent, usually 65537) → find d such that e×d ≡ 1 mod φ(n).</p>
+      <div class="g2">
+        <div>
+          <div class="code">
+            <div class="code-bar"><div class="code-dots"><span class="cd-r"></span><span class="cd-y"></span><span class="cd-g"></span></div><span class="code-lang">python — RSA from scratch (small)</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+            <pre><span class="c"># Small RSA demo (not secure — for learning only)</span>
+p, q = <span class="v">61</span>, <span class="v">53</span>               <span class="c"># real: 2048+ bit primes</span>
+n = p * q                    <span class="c"># n = 3233</span>
+phi = (p - <span class="v">1</span>) * (q - <span class="v">1</span>)   <span class="c"># φ(n) = 3120</span>
+e = <span class="v">17</span>                       <span class="c"># public exponent (gcd(e,φ)=1)</span>
+
+<span class="c"># Extended Euclidean to find d</span>
+<span class="k">def</span> <span class="f">modinv</span>(a, m):
+    g, x = <span class="f">extended_gcd</span>(a % m, m)
+    <span class="k">return</span> x % m
+<span class="k">def</span> <span class="f">extended_gcd</span>(a, b):
+    <span class="k">if</span> a == <span class="v">0</span>: <span class="k">return</span> b, <span class="v">0</span>
+    g, x = <span class="f">extended_gcd</span>(b % a, a)
+    <span class="k">return</span> g, <span class="v">1</span> - (b // a) * x
+
+d = <span class="f">modinv</span>(e, phi)           <span class="c"># d = 2753 (private key)</span>
+
+<span class="c"># Encrypt:  c = m^e mod n</span>
+m = <span class="v">65</span>                       <span class="c"># message = 65</span>
+c = <span class="f">pow</span>(m, e, n)             <span class="c"># ciphertext = 2790</span>
+<span class="f">print</span>(<span class="s">f"Encrypted: {c}"</span>)
+
+<span class="c"># Decrypt:  m = c^d mod n</span>
+<span class="f">print</span>(<span class="s">f"Decrypted: {pow(c, d, n)}"</span>)  <span class="c"># → 65</span></pre>
+          </div>
+        </div>
+        <div>
+          <div class="code">
+            <div class="code-bar"><div class="code-dots"><span class="cd-r"></span><span class="cd-y"></span><span class="cd-g"></span></div><span class="code-lang">python — RSA with library</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+            <pre><span class="k">from</span> cryptography.hazmat.primitives.asymmetric <span class="k">import</span> rsa, padding
+<span class="k">from</span> cryptography.hazmat.primitives <span class="k">import</span> hashes
+
+<span class="c"># Generate 2048-bit RSA key pair</span>
+private_key = rsa.generate_private_key(
+    public_exponent=<span class="v">65537</span>,
+    key_size=<span class="v">2048</span>
+)
+public_key = private_key.public_key()
+
+<span class="c"># Encrypt with public key (OAEP padding)</span>
+ct = public_key.encrypt(
+    <span class="s">b"Top secret data"</span>,
+    padding.OAEP(
+        mgf=padding.MGF1(algorithm=hashes.SHA256()),
+        algorithm=hashes.SHA256(),
+        label=<span class="k">None</span>
+    )
+)
+
+<span class="c"># Decrypt with private key</span>
+pt = private_key.decrypt(
+    ct,
+    padding.OAEP(
+        mgf=padding.MGF1(algorithm=hashes.SHA256()),
+        algorithm=hashes.SHA256(),
+        label=<span class="k">None</span>
+    )
+)
+<span class="f">print</span>(pt)  <span class="c"># b'Top secret data'</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="note ny">
+        <div class="note-lbl">RSA Key Sizes</div>
+        <strong>1024-bit:</strong> Broken — do not use. &nbsp;<strong>2048-bit:</strong> Current minimum. &nbsp;<strong>4096-bit:</strong> Recommended for long-term security. RSA is ~1000× slower than AES, which is why it's only used for key exchange and signatures, not bulk encryption.
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="c4b">
+    <div class="card-hd" onclick="tog('c4b')"><h3>ECC — Elliptic Curve Cryptography</h3><div class="card-tags"><span class="ct ct-g">modern standard</span></div><span class="card-chev">▾</span></div>
+    <div class="card-bd">
+      <p>ECC achieves equivalent security to RSA with much smaller key sizes, making it faster and more efficient for mobile/embedded devices.</p>
+      <table class="dt">
+        <tr><th>RSA Key Size</th><th>ECC Equivalent</th><th>Security Level</th></tr>
+        <tr><td>1024-bit</td><td>160-bit</td><td>80-bit (weak)</td></tr>
+        <tr><td>2048-bit</td><td>224-bit</td><td>112-bit</td></tr>
+        <tr><td>3072-bit</td><td>256-bit (P-256)</td><td>128-bit (current)</td></tr>
+        <tr><td>7680-bit</td><td>384-bit (P-384)</td><td>192-bit</td></tr>
+      </table>
+      <p style="margin-top:12px">Common curves: <span class="mi">P-256 (secp256r1)</span> — used in TLS 1.3, HTTPS &nbsp;|&nbsp; <span class="mi">Curve25519</span> — used in Signal, SSH &nbsp;|&nbsp; <span class="mi">secp256k1</span> — Bitcoin</p>
+      <div class="code">
+        <div class="code-bar"><div class="code-dots"><span class="cd-r"></span><span class="cd-y"></span><span class="cd-g"></span></div><span class="code-lang">python — ECDH key exchange</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="k">from</span> cryptography.hazmat.primitives.asymmetric.x25519 <span class="k">import</span> X25519PrivateKey
+
+<span class="c"># Alice generates her keys</span>
+alice_private = X25519PrivateKey.generate()
+alice_public  = alice_private.public_key()
+
+<span class="c"># Bob generates his keys</span>
+bob_private = X25519PrivateKey.generate()
+bob_public  = bob_private.public_key()
+
+<span class="c"># Key exchange — both derive the SAME shared secret</span>
+alice_shared = alice_private.exchange(bob_public)
+bob_shared   = bob_private.exchange(alice_public)
+
+<span class="f">print</span>(alice_shared == bob_shared)  <span class="c"># True!</span>
+<span class="f">print</span>(alice_shared.hex())          <span class="c"># same 32-byte secret</span>
+<span class="c"># This shared secret can now derive an AES key (HKDF)</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════
+     S5 · HASHING
+══════════════════════════════════════════════════════ -->
+<section class="section" id="s5">
+  <div class="sec-label"><div class="sec-num">05</div><div class="sec-badge">integrity</div></div>
+  <div class="sec-title">CRYPTOGRAPHIC HASH FUNCTIONS</div>
+  <p class="sec-desc">One-way functions: easy to compute, impossible to reverse. Fixed-size output regardless of input size. Any change to input → completely different hash.</p>
+
+  <div class="hash-flow">
+    <div class="hf-box"><div class="hb-lbl">Input</div><div class="hb-val">"Hello"</div></div>
+    <div class="hf-arrow">→</div>
+    <div class="hf-func">SHA-256</div>
+    <div class="hf-arrow">→</div>
+    <div class="hf-box"><div class="hb-lbl">Hash (64 hex chars)</div><div class="hb-val">185f8db32...2b4ad2a</div></div>
+  </div>
+  <div class="hash-flow">
+    <div class="hf-box"><div class="hb-lbl">Input (1 char diff)</div><div class="hb-val">"hello"</div></div>
+    <div class="hf-arrow">→</div>
+    <div class="hf-func">SHA-256</div>
+    <div class="hf-arrow">→</div>
+    <div class="hf-box"><div class="hb-lbl">Completely different!</div><div class="hb-val" style="color:var(--rose)">2cf24dba5...9e1b161</div></div>
+  </div>
+
+  <div class="card always">
+    <div class="card-hd"><h3>HASH ALGORITHM COMPARISON</h3><div class="card-tags"><span class="ct ct-t">reference</span></div></div>
+    <div class="card-bd">
+      <table class="dt">
+        <tr><th>Algorithm</th><th>Output Size</th><th>Speed</th><th>Status</th><th>Use For</th></tr>
+        <tr><td class="mc">MD5</td><td>128-bit (32 hex)</td><td>Very fast</td><td class="mc" style="color:var(--rose)">BROKEN</td><td>Checksums only — NOT security</td></tr>
+        <tr><td class="mc">SHA-1</td><td>160-bit (40 hex)</td><td>Fast</td><td class="mc" style="color:var(--rose)">BROKEN (2017)</td><td>Legacy only — avoid</td></tr>
+        <tr><td class="mc">SHA-256</td><td>256-bit (64 hex)</td><td>Good</td><td class="mc" style="color:#5ec97a">Secure</td><td>Signatures, TLS, Bitcoin</td></tr>
+        <tr><td class="mc">SHA-512</td><td>512-bit (128 hex)</td><td>Slightly slower</td><td class="mc" style="color:#5ec97a">Secure</td><td>High-security contexts</td></tr>
+        <tr><td class="mc">SHA-3/Keccak</td><td>Variable</td><td>Moderate</td><td class="mc" style="color:#5ec97a">Secure</td><td>Post-SHA-2 standard</td></tr>
+        <tr><td class="mc">BLAKE2</td><td>Variable</td><td>Very fast</td><td class="mc" style="color:#5ec97a">Secure</td><td>Modern alternative to SHA-256</td></tr>
+      </table>
+      <div class="code">
+        <div class="code-bar"><div class="code-dots"><span class="cd-r"></span><span class="cd-y"></span><span class="cd-g"></span></div><span class="code-lang">python — computing hashes</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="k">import</span> hashlib
+
+data = <span class="s">b"Hello, Cryptography!"</span>
+
+<span class="c"># Compute all common hashes</span>
+<span class="f">print</span>(<span class="s">f"MD5    : {hashlib.md5(data).hexdigest()}"</span>)
+<span class="f">print</span>(<span class="s">f"SHA-1  : {hashlib.sha1(data).hexdigest()}"</span>)
+<span class="f">print</span>(<span class="s">f"SHA-256: {hashlib.sha256(data).hexdigest()}"</span>)
+<span class="f">print</span>(<span class="s">f"SHA-512: {hashlib.sha512(data).hexdigest()}"</span>)
+<span class="f">print</span>(<span class="s">f"SHA-3  : {hashlib.sha3_256(data).hexdigest()}"</span>)
+<span class="f">print</span>(<span class="s">f"BLAKE2 : {hashlib.blake2b(data).hexdigest()}"</span>)
+
+<span class="c"># Hash a file (file integrity check)</span>
+<span class="k">def</span> <span class="f">hash_file</span>(path):
+    h = hashlib.sha256()
+    <span class="k">with</span> <span class="f">open</span>(path, <span class="s">'rb'</span>) <span class="k">as</span> f:
+        <span class="k">for</span> chunk <span class="k">in</span> <span class="f">iter</span>(<span class="k">lambda</span>: f.read(<span class="v">4096</span>), <span class="s">b''</span>):
+            h.update(chunk)
+    <span class="k">return</span> h.hexdigest()
+
+<span class="f">print</span>(<span class="f">hash_file</span>(<span class="s">"/etc/passwd"</span>))</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="c5b">
+    <div class="card-hd" onclick="tog('c5b')"><h3>HASH PROPERTIES & COLLISION ATTACKS</h3><div class="card-tags"><span class="ct ct-r">security critical</span></div><span class="card-chev">▾</span></div>
+    <div class="card-bd">
+      <table class="dt">
+        <tr><th>Property</th><th>Meaning</th><th>Attack if broken</th></tr>
+        <tr><td><strong>Pre-image resistance</strong></td><td>Given hash H, can't find M where hash(M)=H</td><td>Reverses hashing — catastrophic</td></tr>
+        <tr><td><strong>Second pre-image resistance</strong></td><td>Given M1, can't find M2 where hash(M1)=hash(M2)</td><td>Forge documents with same hash</td></tr>
+        <tr><td><strong>Collision resistance</strong></td><td>Can't find ANY two messages with the same hash</td><td>MD5/SHA-1 broken here (SHAttered)</td></tr>
+      </table>
+      <div class="note nr">
+        <div class="note-lbl">SHAttered Attack (2017)</div>
+        Google demonstrated the first SHA-1 collision: two different PDF files with the <em>same SHA-1 hash</em>. This took ~9.2 quintillion computations. SHA-1 is now officially broken for security purposes. All modern systems use SHA-256 or SHA-3.
+      </div>
+      <div class="code">
+        <div class="code-bar"><div class="code-dots"><span class="cd-r"></span><span class="cd-y"></span><span class="cd-g"></span></div><span class="code-lang">bash — hash operations</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="c"># Compute file hashes from terminal</span>
+md5sum file.txt
+sha1sum file.txt
+sha256sum file.txt
+sha512sum file.txt
+
+<span class="c"># Verify file integrity</span>
+sha256sum -c checksums.txt
+
+<span class="c"># Identify hash type by length</span>
+<span class="c"># 32 chars → MD5  (128-bit)</span>
+<span class="c"># 40 chars → SHA-1 (160-bit)</span>
+<span class="c"># 64 chars → SHA-256 (256-bit)</span>
+<span class="c"># 128 chars → SHA-512 (512-bit)</span>
+
+<span class="c"># Hash cracking with hashcat</span>
+hashcat <span class="o">-m 0</span>  hash.txt rockyou.txt  <span class="c"># MD5</span>
+hashcat <span class="o">-m 100</span> hash.txt rockyou.txt  <span class="c"># SHA-1</span>
+hashcat <span class="o">-m 1400</span> hash.txt rockyou.txt <span class="c"># SHA-256</span>
+hashcat <span class="o">-m 1800</span> hash.txt rockyou.txt <span class="c"># sha512crypt</span>
+
+<span class="c"># Hash cracking with john the ripper</span>
+john --wordlist=rockyou.txt --format=raw-md5 hash.txt</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════
+     S6 · DIGITAL SIGNATURES
+══════════════════════════════════════════════════════ -->
+<section class="section" id="s6">
+  <div class="sec-label"><div class="sec-num">06</div><div class="sec-badge">authentication</div></div>
+  <div class="sec-title">DIGITAL SIGNATURES</div>
+  <p class="sec-desc">Prove authenticity and integrity simultaneously. Only the private key holder can sign; anyone with the public key can verify.</p>
+
+  <div class="diagram"><span class="dh">DIGITAL SIGNATURE — SIGN & VERIFY</span>
+
+<span class="dg">SIGNING (Alice → Bob):</span>
+  1. Alice computes:  <span class="dy">hash</span> = SHA-256(document)
+  2. Alice encrypts:  <span class="dr">signature</span> = RSA_encrypt(<span class="dy">hash</span>, Alice's_<span class="dr">PRIVATE</span>_key)
+  3. Alice sends:     document + <span class="dr">signature</span>
+
+<span class="dg">VERIFICATION (Bob verifies):</span>
+  1. Bob computes:    <span class="dy">hash1</span> = SHA-256(received_document)
+  2. Bob decrypts:    <span class="dy">hash2</span> = RSA_decrypt(<span class="dr">signature</span>, Alice's_<span class="dg">PUBLIC</span>_key)
+  3. Bob checks:      <span class="dy">hash1</span> == <span class="dy">hash2</span>  → <span class="dg">VALID</span> (unmodified, from Alice)
+                      <span class="dy">hash1</span> != <span class="dy">hash2</span>  → <span class="dr">INVALID</span> (tampered or wrong signer)</span>
+
+<span class="dd">Non-repudiation: Alice cannot deny signing — only her private key could have produced it.</span></div>
+
+  <div class="code">
+    <div class="code-bar"><div class="code-dots"><span class="cd-r"></span><span class="cd-y"></span><span class="cd-g"></span></div><span class="code-lang">python — RSA & ECDSA signatures</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+    <pre><span class="k">from</span> cryptography.hazmat.primitives.asymmetric <span class="k">import</span> rsa, ec, padding
+<span class="k">from</span> cryptography.hazmat.primitives <span class="k">import</span> hashes
+<span class="k">from</span> cryptography.hazmat.primitives.asymmetric.utils <span class="k">import</span> decode_dss_signature
+
+<span class="c"># ─── RSA Signature ───────────────────────────────</span>
+priv = rsa.generate_private_key(public_exponent=<span class="v">65537</span>, key_size=<span class="v">2048</span>)
+pub  = priv.public_key()
+
+document = <span class="s">b"I agree to transfer $1000 to Bob"</span>
+signature = priv.sign(document, padding.PKCS1v15(), hashes.SHA256())
+
+<span class="c"># Verify (raises InvalidSignature if tampered)</span>
+<span class="k">try</span>:
+    pub.verify(signature, document, padding.PKCS1v15(), hashes.SHA256())
+    <span class="f">print</span>(<span class="s">"RSA Signature: VALID ✓"</span>)
+<span class="k">except Exception</span>:
+    <span class="f">print</span>(<span class="s">"RSA Signature: INVALID ✗"</span>)
+
+<span class="c"># ─── ECDSA Signature (smaller, faster) ───────────</span>
+ec_priv = ec.generate_private_key(ec.SECP256R1())  <span class="c"># P-256</span>
+ec_pub  = ec_priv.public_key()
+
+ec_sig = ec_priv.sign(document, ec.ECDSA(hashes.SHA256()))
+<span class="k">try</span>:
+    ec_pub.verify(ec_sig, document, ec.ECDSA(hashes.SHA256()))
+    <span class="f">print</span>(<span class="s">"ECDSA Signature: VALID ✓"</span>)
+<span class="k">except</span>:
+    <span class="f">print</span>(<span class="s">"ECDSA Signature: INVALID ✗"</span>)</pre>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════
+     S7 · KEY EXCHANGE (DIFFIE-HELLMAN)
+══════════════════════════════════════════════════════ -->
+<section class="section" id="s7">
+  <div class="sec-label"><div class="sec-num">07</div><div class="sec-badge">key exchange</div></div>
+  <div class="sec-title">KEY EXCHANGE — DIFFIE-HELLMAN</div>
+  <p class="sec-desc">The elegant solution to the key distribution problem: two parties derive the same shared secret over a public channel without ever transmitting it.</p>
+
+  <div class="ke-vis">
+    <div class="ke-party">
+      <h4>ALICE</h4>
+      <div class="ke-lbl">public params</div>
+      <div class="ke-val">g=5, p=23</div>
+      <div class="ke-lbl" style="margin-top:10px">private (secret)</div>
+      <div class="ke-val" style="color:var(--rose)">a = 6</div>
+      <div class="ke-lbl" style="margin-top:10px">computes public value</div>
+      <div class="ke-val">A = g^a mod p</div>
+      <div class="ke-val">A = 5^6 mod 23 = <strong>8</strong></div>
+      <div class="ke-lbl" style="margin-top:10px">shared secret</div>
+      <div class="ke-val" style="color:#5ec97a">s = B^a mod p = 2^6 mod 23 = <strong>2</strong></div>
+    </div>
+    <div class="ke-channel">
+      <div class="ke-msg">← A = 8<br>sent to Bob</div>
+      <div style="width:1px;height:20px;background:var(--border)"></div>
+      <div class="ke-msg">B = 2 →<br>sent to Alice</div>
+      <div style="font-family:var(--mono);font-size:9px;color:var(--rose);text-align:center;margin-top:10px;line-height:1.5">PUBLIC<br>CHANNEL<br>Eve sees:<br>g,p,A,B<br>NOT s!</div>
+    </div>
+    <div class="ke-party">
+      <h4>BOB</h4>
+      <div class="ke-lbl">public params</div>
+      <div class="ke-val">g=5, p=23</div>
+      <div class="ke-lbl" style="margin-top:10px">private (secret)</div>
+      <div class="ke-val" style="color:var(--rose)">b = 15</div>
+      <div class="ke-lbl" style="margin-top:10px">computes public value</div>
+      <div class="ke-val">B = g^b mod p</div>
+      <div class="ke-val">B = 5^15 mod 23 = <strong>2</strong></div>
+      <div class="ke-lbl" style="margin-top:10px">shared secret</div>
+      <div class="ke-val" style="color:#5ec97a">s = A^b mod p = 8^15 mod 23 = <strong>2</strong></div>
+    </div>
+  </div>
+  <p style="margin-top:4px;font-size:12px;color:var(--text3);font-family:var(--mono);text-align:center">Both independently computed s=2. Eve cannot derive s from g,p,A,B — this is the discrete log problem.</p>
+
+  <div class="note ng">
+    <div class="note-lbl">Perfect Forward Secrecy (PFS)</div>
+    <strong>Ephemeral DH (DHE/ECDHE)</strong> generates a fresh DH key pair for every session. Even if the server's long-term private key is later compromised, past sessions cannot be decrypted because the ephemeral keys were discarded. TLS 1.3 requires ECDHE — PFS is mandatory.
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════
+     S8 · MAC & HMAC
+══════════════════════════════════════════════════════ -->
+<section class="section" id="s8">
+  <div class="sec-label"><div class="sec-num">08</div><div class="sec-badge">integrity + auth</div></div>
+  <div class="sec-title">MAC & HMAC</div>
+  <p class="sec-desc">Message Authentication Codes combine integrity with authentication — proving data wasn't tampered with AND came from someone holding the secret key.</p>
+
+  <div class="g2">
+    <div class="mini">
+      <h4>MAC vs Hash</h4>
+      <p>A hash verifies integrity but NOT authenticity — anyone can recompute a hash and replace it. A <strong>MAC</strong> requires a secret key, so only the keyholder can produce a valid MAC.</p>
+      <div class="diagram" style="margin-top:10px"><span class="dh">MAC</span>(key, message) → tag
+<span class="dd">─────────────────────────</span>
+<span class="dg">Verify:</span> recompute MAC,
+check if tags match.
+<span class="dr">Attacker can't forge</span>
+<span class="dr">without the key.</span></div>
+    </div>
+    <div class="mini">
+      <h4>HMAC Construction</h4>
+      <p>HMAC (Hash-based MAC) uses a hash function internally with the key applied twice for security.</p>
+      <div class="diagram" style="margin-top:10px"><span class="dy">HMAC</span>(K, M) =
+  H( (K ⊕ opad) ‖
+     H( (K ⊕ ipad) ‖ M ) )
+
+<span class="dd">opad = 0x5c5c5c...</span>
+<span class="dd">ipad = 0x363636...</span>
+<span class="dg">Secure even if underlying</span>
+<span class="dg">hash has length extension</span>
+<span class="dg">vulnerabilities.</span></div>
+    </div>
+  </div>
+
+  <div class="code">
+    <div class="code-bar"><div class="code-dots"><span class="cd-r"></span><span class="cd-y"></span><span class="cd-g"></span></div><span class="code-lang">python — HMAC implementation</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+    <pre><span class="k">import</span> hmac, hashlib, os, secrets
+
+key = os.urandom(<span class="v">32</span>)        <span class="c"># 256-bit secret key</span>
+message = <span class="s">b"Transfer $100 to Alice"</span>
+
+<span class="c"># Compute HMAC-SHA256</span>
+mac = hmac.new(key, message, hashlib.sha256).hexdigest()
+<span class="f">print</span>(<span class="s">f"HMAC: {mac}"</span>)
+
+<span class="c"># Verify (use hmac.compare_digest — timing-safe!)</span>
+received_mac = hmac.new(key, message, hashlib.sha256).digest()
+computed_mac = hmac.new(key, message, hashlib.sha256).digest()
+<span class="k">if</span> hmac.compare_digest(received_mac, computed_mac):
+    <span class="f">print</span>(<span class="s">"Authentic ✓"</span>)
+
+<span class="c"># WRONG: don't use ==  for MAC comparison → timing attack!</span>
+<span class="c"># if received_mac == computed_mac:  ← VULNERABLE</span>
+<span class="c"># ALWAYS use hmac.compare_digest() for constant-time comparison</span>
+
+<span class="c"># Using cryptography library (CMAC over AES)</span>
+<span class="k">from</span> cryptography.hazmat.primitives.cmac <span class="k">import</span> CMAC
+<span class="k">from</span> cryptography.hazmat.primitives.ciphers <span class="k">import</span> algorithms
+
+aes_key = os.urandom(<span class="v">16</span>)
+c = CMAC(algorithms.AES(aes_key))
+c.update(<span class="s">b"data to authenticate"</span>)
+<span class="f">print</span>(c.finalize().hex())</pre>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════
+     S9 · PKI & CERTIFICATES
+══════════════════════════════════════════════════════ -->
+<section class="section" id="s9">
+  <div class="sec-label"><div class="sec-num">09</div><div class="sec-badge">infrastructure</div></div>
+  <div class="sec-title">PKI & X.509 CERTIFICATES</div>
+  <p class="sec-desc">Public Key Infrastructure — the trust hierarchy that makes HTTPS work. Who vouches for whose public key?</p>
+
+  <div class="diagram"><span class="dh">CERTIFICATE CHAIN OF TRUST</span>
+
+<span class="dy">ROOT CA</span> (Root Certificate Authority)
+  └── Self-signed certificate, stored in your OS/browser
+  └── Extremely carefully guarded (offline, air-gapped)
+  └── Examples: DigiCert Root G1, Comodo, Let's Encrypt ISRG Root X1
+
+    <span class="db">INTERMEDIATE CA</span>
+      └── Certificate signed by Root CA
+      └── Issues end-entity certificates day-to-day
+      └── If compromised → revoked without touching Root
+
+        <span class="dg">END-ENTITY CERT (leaf)</span>
+          └── Certificate for google.com, github.com, etc.
+          └── Contains: domain, public key, validity period, CA signature
+          └── Verified by: browser checks CA signature chain up to trusted Root
+
+<span class="dd">Browser verifies:</span>
+  <span class="dd">1. Cert not expired</span>
+  <span class="dd">2. Domain matches cert (CN or SAN)</span>
+  <span class="dd">3. Signature chain → trusted Root CA</span>
+  <span class="dd">4. Not revoked (CRL / OCSP check)</span></div>
+
+  <div class="code">
+    <div class="code-bar"><div class="code-dots"><span class="cd-r"></span><span class="cd-y"></span><span class="cd-g"></span></div><span class="code-lang">bash — X.509 certificate inspection</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+    <pre><span class="c"># View a website's certificate</span>
+echo | openssl s_client <span class="o">-connect</span> google.com:<span class="v">443</span> <span class="v">2</span>>/dev/null \
+  | openssl x509 <span class="o">-text -noout</span>
+
+<span class="c"># Check certificate dates</span>
+echo | openssl s_client <span class="o">-connect</span> github.com:<span class="v">443</span> <span class="v">2</span>>/dev/null \
+  | openssl x509 <span class="o">-noout -dates</span>
+
+<span class="c"># Generate self-signed cert (for lab use)</span>
+openssl req <span class="o">-x509 -newkey rsa:4096 -keyout key.pem -out cert.pem</span> \
+  <span class="o">-days 365 -nodes -subj</span> <span class="s">"/CN=localhost"</span>
+
+<span class="c"># Generate CSR (Certificate Signing Request)</span>
+openssl genrsa <span class="o">-out</span> private.key <span class="v">2048</span>
+openssl req <span class="o">-new -key</span> private.key <span class="o">-out</span> request.csr
+
+<span class="c"># Inspect a certificate file</span>
+openssl x509 <span class="o">-in</span> cert.pem <span class="o">-text -noout</span>
+openssl x509 <span class="o">-in</span> cert.pem <span class="o">-noout -subject -issuer -dates -fingerprint</span>
+
+<span class="c"># Check OCSP status (is cert revoked?)</span>
+openssl ocsp <span class="o">-issuer</span> issuer.pem <span class="o">-cert</span> cert.pem <span class="o">-url</span> http://ocsp.example.com</pre>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════
+     S10 · TLS / HTTPS
+══════════════════════════════════════════════════════ -->
+<section class="section" id="s10">
+  <div class="sec-label"><div class="sec-num">10</div><div class="sec-badge">applied</div></div>
+  <div class="sec-title">TLS — TRANSPORT LAYER SECURITY</div>
+  <p class="sec-desc">How HTTPS actually works — the cryptographic handshake that sets up every secure web session.</p>
+
+  <div class="diagram"><span class="dh">TLS 1.3 HANDSHAKE (simplified)</span>
+
+<span class="dg">CLIENT</span>                                          <span class="db">SERVER</span>
+   │                                               │
+   │── ClientHello ──────────────────────────────► │
+   │   TLS version, cipher suites, client random   │
+   │   <span class="dy">+ key_share (ECDH ephemeral public key)</span>      │
+   │                                               │
+   │◄─ ServerHello ──────────────────────────────  │
+   │   chosen cipher, server random                │
+   │   <span class="dy">+ key_share (server ECDH public key)</span>          │
+   │                                               │
+   │   [Both derive handshake keys via ECDH]       │
+   │                                               │
+   │◄─ {Certificate} ─ encrypted ─────────────── │
+   │◄─ {CertificateVerify} signature ────────────  │
+   │◄─ {Finished} HMAC of transcript ────────────  │
+   │                                               │
+   │   [Client verifies cert chain + signature]    │
+   │── {Finished} ─ encrypted ──────────────────► │
+   │                                               │
+   │◄════════════ Application Data (encrypted) ══► │
+
+<span class="dd">TLS 1.3 cipher suite example: TLS_AES_256_GCM_SHA384</span>
+<span class="dd">  AES-256-GCM = bulk encryption | SHA-384 = HKDF/HMAC</span>
+<span class="dd">  ECDHE = key exchange (mandatory PFS in TLS 1.3)</span></div>
+
+  <div class="g2">
+    <div class="mini">
+      <h4>TLS Cipher Suite Anatomy</h4>
+      <p style="font-family:var(--mono);font-size:11px;color:var(--teal2);margin-bottom:10px">TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384</p>
+      <table class="dt">
+        <tr><th>Part</th><th>Meaning</th></tr>
+        <tr><td>ECDHE</td><td>Key exchange algorithm</td></tr>
+        <tr><td>RSA</td><td>Authentication / cert type</td></tr>
+        <tr><td>AES_256_GCM</td><td>Bulk encryption cipher</td></tr>
+        <tr><td>SHA384</td><td>HMAC / PRF hash function</td></tr>
+      </table>
+    </div>
+    <div class="mini">
+      <h4>TLS Version Security</h4>
+      <table class="dt">
+        <tr><th>Version</th><th>Status</th></tr>
+        <tr><td class="mc">SSL 2.0/3.0</td><td style="color:var(--rose)">Broken — POODLE, DROWN</td></tr>
+        <tr><td class="mc">TLS 1.0</td><td style="color:var(--rose)">Deprecated — BEAST</td></tr>
+        <tr><td class="mc">TLS 1.1</td><td style="color:var(--rose)">Deprecated</td></tr>
+        <tr><td class="mc">TLS 1.2</td><td style="color:var(--gold)">OK — config dependent</td></tr>
+        <tr><td class="mc">TLS 1.3</td><td style="color:#5ec97a">Required — PFS mandatory</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════
+     S11 · PASSWORD HASHING
+══════════════════════════════════════════════════════ -->
+<section class="section" id="s11">
+  <div class="sec-label"><div class="sec-num">11</div><div class="sec-badge">critical security</div></div>
+  <div class="sec-title">PASSWORD HASHING</div>
+  <p class="sec-desc">Storing passwords correctly — why plain SHA-256 is WRONG and what to use instead.</p>
+
+  <div class="note nr">
+    <div class="note-lbl">Never Store Plaintext Passwords</div>
+    Never store plaintext or simple hashes (MD5/SHA-256) of passwords. A leaked database of SHA-256 hashes can be cracked with a GPU at billions of guesses per second using rainbow tables. Always use purpose-built slow hash functions.
+  </div>
+
+  <table class="dt">
+    <tr><th>Algorithm</th><th>Year</th><th>Tunable?</th><th>GPU Resistance</th><th>Status</th></tr>
+    <tr><td class="mc">MD5(password)</td><td>1992</td><td>No</td><td class="mc" style="color:var(--rose)">None</td><td class="mc" style="color:var(--rose)">Never use</td></tr>
+    <tr><td class="mc">SHA-256(password)</td><td>2001</td><td>No</td><td class="mc" style="color:var(--rose)">None</td><td class="mc" style="color:var(--rose)">Never use</td></tr>
+    <tr><td class="mc">bcrypt</td><td>1999</td><td>Yes (cost)</td><td>Moderate</td><td class="mc" style="color:#5ec97a">Recommended</td></tr>
+    <tr><td class="mc">scrypt</td><td>2009</td><td>Yes (N,r,p)</td><td>High (memory-hard)</td><td class="mc" style="color:#5ec97a">Recommended</td></tr>
+    <tr><td class="mc">Argon2id</td><td>2015</td><td>Yes</td><td class="mc" style="color:#5ec97a">Highest (PHC winner)</td><td class="mc" style="color:#5ec97a">Best choice</td></tr>
+  </table>
+
+  <div class="code">
+    <div class="code-bar"><div class="code-dots"><span class="cd-r"></span><span class="cd-y"></span><span class="cd-g"></span></div><span class="code-lang">python — password hashing properly</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+    <pre><span class="k">import</span> bcrypt
+<span class="k">from</span> cryptography.hazmat.primitives.kdf.scrypt <span class="k">import</span> Scrypt
+<span class="k">from</span> cryptography.hazmat.primitives.kdf.argon2 <span class="k">import</span> Argon2id  <span class="c"># cryptography>=41</span>
+<span class="k">import</span> os
+
+<span class="c"># ─── bcrypt ────────────────────────────────────────────────</span>
+password = <span class="s">b"my_secret_password"</span>
+hash_ = bcrypt.hashpw(password, bcrypt.gensalt(rounds=<span class="v">12</span>))  <span class="c"># cost=12</span>
+<span class="f">print</span>(hash_)  <span class="c"># $2b$12$SALT....HASH</span>
+
+<span class="c"># Verify</span>
+<span class="k">if</span> bcrypt.checkpw(password, hash_):
+    <span class="f">print</span>(<span class="s">"Password correct ✓"</span>)
+
+<span class="c"># ─── scrypt ────────────────────────────────────────────────</span>
+salt = os.urandom(<span class="v">16</span>)
+kdf = Scrypt(salt=salt, length=<span class="v">32</span>, n=<span class="v">2</span>**<span class="v">14</span>, r=<span class="v">8</span>, p=<span class="v">1</span>)
+derived = kdf.derive(<span class="s">b"my_secret_password"</span>)
+<span class="f">print</span>(derived.hex())
+
+<span class="c"># ─── Why salting matters ───────────────────────────────────</span>
+<span class="c"># Without salt: hash("password") is ALWAYS the same</span>
+<span class="c"># Attacker pre-computes: dict → hash lookup (rainbow table)</span>
+<span class="c"># With salt: hash("password" + random_salt) is unique each time</span>
+<span class="c"># bcrypt/scrypt/argon2 handle salting automatically — always use them</span>
+
+<span class="c"># ─── PBKDF2 (older but still acceptable) ─────────────────</span>
+<span class="k">import</span> hashlib
+dk = hashlib.pbkdf2_hmac(<span class="s">'sha256'</span>, <span class="s">b'password'</span>, salt, <span class="v">310000</span>)
+<span class="c"># 310,000 iterations = NIST minimum 2023 recommendation</span></pre>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════
+     S12 · PYTHON CRYPTO LAB
+══════════════════════════════════════════════════════ -->
+<section class="section" id="s12">
+  <div class="sec-label"><div class="sec-num">12</div><div class="sec-badge">hands-on</div></div>
+  <div class="sec-title">PYTHON CRYPTO LAB</div>
+  <p class="sec-desc">End-to-end cryptographic operations in Python — from key generation to a complete hybrid encryption system.</p>
+
+  <div class="card always">
+    <div class="card-hd"><h3>HYBRID ENCRYPTION — How Real Systems Work</h3><div class="card-tags"><span class="ct ct-g">real-world pattern</span></div></div>
+    <div class="card-bd">
+      <p>TLS, PGP, and Signal all use <strong>hybrid encryption</strong>: asymmetric crypto to exchange a symmetric key, then symmetric crypto for the actual data. Best of both worlds.</p>
+      <div class="code">
+        <div class="code-bar"><div class="code-dots"><span class="cd-r"></span><span class="cd-y"></span><span class="cd-g"></span></div><span class="code-lang">python — complete hybrid encryption system</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="k">from</span> cryptography.hazmat.primitives.asymmetric <span class="k">import</span> rsa, padding
+<span class="k">from</span> cryptography.hazmat.primitives.ciphers.aead <span class="k">import</span> AESGCM
+<span class="k">from</span> cryptography.hazmat.primitives <span class="k">import</span> hashes, serialization
+<span class="k">import</span> os, json, base64
+
+<span class="c"># ── KEY GENERATION ────────────────────────────────</span>
+<span class="k">def</span> <span class="f">generate_rsa_keypair</span>():
+    priv = rsa.generate_private_key(public_exponent=<span class="v">65537</span>, key_size=<span class="v">2048</span>)
+    <span class="k">return</span> priv, priv.public_key()
+
+<span class="c"># ── ENCRYPT (Sender) ──────────────────────────────</span>
+<span class="k">def</span> <span class="f">encrypt</span>(plaintext: bytes, recipient_pub_key) -> dict:
+    <span class="c"># 1. Generate random AES-256 key</span>
+    aes_key = os.urandom(<span class="v">32</span>)
+    nonce   = os.urandom(<span class="v">12</span>)
+
+    <span class="c"># 2. Encrypt data with AES-GCM</span>
+    ciphertext = AESGCM(aes_key).encrypt(nonce, plaintext, <span class="k">None</span>)
+
+    <span class="c"># 3. Encrypt AES key with recipient's RSA public key</span>
+    enc_key = recipient_pub_key.encrypt(
+        aes_key,
+        padding.OAEP(padding.MGF1(hashes.SHA256()), hashes.SHA256(), <span class="k">None</span>)
+    )
+    <span class="k">return</span> {
+        <span class="s">"enc_key"</span>:    base64.b64encode(enc_key).decode(),
+        <span class="s">"nonce"</span>:      base64.b64encode(nonce).decode(),
+        <span class="s">"ciphertext"</span>: base64.b64encode(ciphertext).decode()
+    }
+
+<span class="c"># ── DECRYPT (Recipient) ───────────────────────────</span>
+<span class="k">def</span> <span class="f">decrypt</span>(package: dict, priv_key) -> bytes:
+    enc_key    = base64.b64decode(package[<span class="s">"enc_key"</span>])
+    nonce      = base64.b64decode(package[<span class="s">"nonce"</span>])
+    ciphertext = base64.b64decode(package[<span class="s">"ciphertext"</span>])
+
+    <span class="c"># 1. Decrypt AES key with RSA private key</span>
+    aes_key = priv_key.decrypt(
+        enc_key,
+        padding.OAEP(padding.MGF1(hashes.SHA256()), hashes.SHA256(), <span class="k">None</span>)
+    )
+    <span class="c"># 2. Decrypt data with AES-GCM</span>
+    <span class="k">return</span> AESGCM(aes_key).decrypt(nonce, ciphertext, <span class="k">None</span>)
+
+<span class="c"># ── DEMO ──────────────────────────────────────────</span>
+alice_priv, alice_pub = <span class="f">generate_rsa_keypair</span>()
+message = <span class="s">b"Top secret: Launch at dawn, coordinates 28.N 77.E"</span>
+
+pkg = <span class="f">encrypt</span>(message, alice_pub)
+<span class="f">print</span>(<span class="s">"Encrypted package:"</span>, json.dumps(pkg, indent=2)[:120], <span class="s">"..."</span>)
+
+recovered = <span class="f">decrypt</span>(pkg, alice_priv)
+<span class="f">print</span>(<span class="s">f"Decrypted: {recovered.decode()}"</span>)</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════
+     S13 · ATTACKS ON CRYPTOGRAPHY
+══════════════════════════════════════════════════════ -->
+<section class="section" id="s13">
+  <div class="sec-label"><div class="sec-num">13</div><div class="sec-badge">offensive</div></div>
+  <div class="sec-title">ATTACKS ON CRYPTOGRAPHY</div>
+  <p class="sec-desc">How cryptographic systems fail in practice — not by breaking the math, but by attacking implementation, protocol, or key management flaws.</p>
+
+  <table class="dt">
+    <tr><th>Attack</th><th>Target</th><th>Mechanism</th><th>Defense</th></tr>
+    <tr><td><strong>Brute Force</strong></td><td>Any cipher/hash</td><td>Try all possible keys</td><td>Long random keys (AES-256)</td></tr>
+    <tr><td><strong>Dictionary Attack</strong></td><td>Password hashes</td><td>Hash common passwords, compare</td><td>Salting + slow hash (bcrypt)</td></tr>
+    <tr><td><strong>Rainbow Tables</strong></td><td>Unsalted hashes</td><td>Precomputed hash→plaintext lookup</td><td>Unique per-password salt</td></tr>
+    <tr><td><strong>Birthday Attack</strong></td><td>Hash collisions</td><td>Find any two inputs with same hash</td><td>Use SHA-256+ (large output)</td></tr>
+    <tr><td><strong>Length Extension</strong></td><td>MD5/SHA-1/SHA-256 MACs</td><td>Extend message without knowing key</td><td>Use HMAC, not H(key‖message)</td></tr>
+    <tr><td><strong>Padding Oracle</strong></td><td>CBC mode AES</td><td>Error messages leak padding validity</td><td>Use AEAD (AES-GCM)</td></tr>
+    <tr><td><strong>Timing Attack</strong></td><td>MAC comparison</td><td>Measure time differences in == comparison</td><td>hmac.compare_digest()</td></tr>
+    <tr><td><strong>BEAST</strong></td><td>TLS 1.0 CBC</td><td>IV predictability in CBC mode</td><td>TLS 1.2+ or use AES-GCM</td></tr>
+    <tr><td><strong>CRIME/BREACH</strong></td><td>TLS compression</td><td>Side-channel via compressed ciphertext length</td><td>Disable TLS compression</td></tr>
+    <tr><td><strong>Downgrade Attack</strong></td><td>TLS negotiation</td><td>Force weaker cipher suite</td><td>TLS 1.3 removes all weak options</td></tr>
+    <tr><td><strong>Reused Nonce/IV</strong></td><td>AES-GCM/CTR</td><td>XOR two ciphertexts → keystream exposed</td><td>Always generate fresh random IV</td></tr>
+    <tr><td><strong>Small Subgroup</strong></td><td>DH key exchange</td><td>Weak DH parameters → small subgroup</td><td>Use RFC 3526 groups, ECDH</td></tr>
+  </table>
+
+  <div class="card" id="c13">
+    <div class="card-hd" onclick="tog('c13')"><h3>CTF CRYPTO ATTACK EXAMPLES</h3><div class="card-tags"><span class="ct ct-r">CTF</span></div><span class="card-chev">▾</span></div>
+    <div class="card-bd">
+      <div class="code">
+        <div class="code-bar"><div class="code-dots"><span class="cd-r"></span><span class="cd-y"></span><span class="cd-g"></span></div><span class="code-lang">python — common CTF crypto attacks</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+        <pre><span class="c"># ─── 1. Two-Time Pad (reused XOR key) ─────────────────────</span>
+<span class="c"># If: CT1 = PT1 XOR key, CT2 = PT2 XOR key</span>
+<span class="c"># Then: CT1 XOR CT2 = PT1 XOR PT2 (key cancels!)</span>
+<span class="c"># With crib-dragging: guess a word in PT1, recover PT2 in that position</span>
+ct1 = bytes.fromhex(<span class="s">"1a2b3c4d5e6f7081"</span>)
+ct2 = bytes.fromhex(<span class="s">"0a1b2c3d4e5f6071"</span>)
+xored = <span class="f">bytes</span>(a ^ b <span class="k">for</span> a,b <span class="k">in</span> <span class="f">zip</span>(ct1, ct2))
+<span class="c"># Now crib-drag: try guessing "the " at each position</span>
+
+<span class="c"># ─── 2. RSA with small exponent (e=3, small message) ──────</span>
+<span class="c"># If m^3 < n, then just take cube root of ciphertext</span>
+<span class="k">import</span> gmpy2
+c = <span class="v">125</span>      <span class="c"># small ciphertext</span>
+m, exact = gmpy2.iroot(c, <span class="v">3</span>)
+<span class="k">if</span> exact: <span class="f">print</span>(<span class="s">f"Message: {m}"</span>)  <span class="c"># → 5</span>
+
+<span class="c"># ─── 3. RSA — Common factor attack ────────────────────────</span>
+<span class="c"># If two RSA moduli share a prime factor: gcd(n1, n2) = p</span>
+<span class="k">import</span> math
+n1 = <span class="v">3233</span>    <span class="c"># 61 × 53</span>
+n2 = <span class="v">3127</span>    <span class="c"># 53 × 59 (shares factor 53 with n1)</span>
+p = math.gcd(n1, n2)  <span class="c"># → 53 (shared prime!)</span>
+q1 = n1 // p          <span class="c"># → 61</span>
+<span class="f">print</span>(<span class="s">f"Factored n1: {p} × {q1}"</span>)
+
+<span class="c"># ─── 4. Frequency analysis on monoalphabetic cipher ──────</span>
+<span class="k">from</span> collections <span class="k">import</span> Counter
+ciphertext = <span class="s">"KHOOR ZRUOG"</span>
+freq = Counter(c <span class="k">for</span> c <span class="k">in</span> ciphertext <span class="k">if</span> c.isalpha())
+<span class="f">print</span>(freq.most_common(<span class="v">5</span>))
+<span class="c"># Most common letter in ciphertext likely maps to 'E' in English</span>
+
+<span class="c"># ─── 5. Identify hash type ─────────────────────────────────</span>
+<span class="k">def</span> <span class="f">id_hash</span>(h):
+    hmap = {<span class="v">32</span>: <span class="s">"MD5"</span>, <span class="v">40</span>: <span class="s">"SHA-1"</span>, <span class="v">64</span>: <span class="s">"SHA-256"</span>, <span class="v">96</span>: <span class="s">"SHA-384"</span>, <span class="v">128</span>: <span class="s">"SHA-512"</span>}
+    <span class="k">return</span> hmap.get(<span class="f">len</span>(h), <span class="s">"Unknown"</span>)
+
+<span class="f">print</span>(<span class="f">id_hash</span>(<span class="s">"5f4dcc3b5aa765d61d8327deb882cf99"</span>))  <span class="c"># MD5</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════
+     S14 · CTF CRYPTO & QUICK REFERENCE
+══════════════════════════════════════════════════════ -->
+<section class="section" id="s14">
+  <div class="sec-label"><div class="sec-num">14</div><div class="sec-badge">reference</div></div>
+  <div class="sec-title">CTF CRYPTO & QUICK REFERENCE</div>
+  <p class="sec-desc">Everything you need at a glance — encoding identification, CTF patterns, and tool commands.</p>
+
+  <div class="g2">
+    <div>
+      <div class="card always">
+        <div class="card-hd"><h3>ENCODING IDENTIFICATION</h3><div class="card-tags"><span class="ct ct-t">CTF</span></div></div>
+        <div class="card-bd">
+          <table class="dt">
+            <tr><th>Pattern</th><th>Encoding</th></tr>
+            <tr><td class="mc">abc123+/=</td><td>Base64</td></tr>
+            <tr><td class="mc">0-9a-f only</td><td>Hex</td></tr>
+            <tr><td class="mc">0-1 only, length ×8</td><td>Binary</td></tr>
+            <tr><td class="mc">-.. .- ...</td><td>Morse code</td></tr>
+            <tr><td class="mc">%XX sequences</td><td>URL encoding</td></tr>
+            <tr><td class="mc">&#XX;</td><td>HTML entities</td></tr>
+            <tr><td class="mc">32 hex chars</td><td>MD5 hash</td></tr>
+            <tr><td class="mc">40 hex chars</td><td>SHA-1 hash</td></tr>
+            <tr><td class="mc">64 hex chars</td><td>SHA-256 hash</td></tr>
+            <tr><td class="mc">$2b$12$...</td><td>bcrypt hash</td></tr>
+            <tr><td class="mc">$6$salt$hash</td><td>SHA-512crypt</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card always">
+        <div class="card-hd"><h3>TOOLS & COMMANDS</h3><div class="card-tags"><span class="ct ct-b">tools</span></div></div>
+        <div class="card-bd">
+          <div class="code">
+            <div class="code-bar"><div class="code-dots"><span class="cd-r"></span><span class="cd-y"></span><span class="cd-g"></span></div><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div>
+            <pre style="font-size:11px"><span class="c"># Encode/decode</span>
+echo -n "hello" | base64
+echo "aGVsbG8=" | base64 -d
+echo -n "hello" | xxd -p        <span class="c"># hex</span>
+echo "68656c6c6f" | xxd -r -p   <span class="c"># unhex</span>
+
+<span class="c"># Hash</span>
+echo -n "hello" | md5sum
+echo -n "hello" | sha256sum
+openssl dgst -sha256 file.txt
+
+<span class="c"># OpenSSL symmetric encrypt</span>
+openssl enc -aes-256-cbc -in f -out f.enc -k pass
+openssl enc -d -aes-256-cbc -in f.enc -out f -k pass
+
+<span class="c"># CyberChef — online Swiss Army knife</span>
+<span class="c"># https://gchq.github.io/CyberChef/</span>
+
+<span class="c"># Python one-liners</span>
+python3 -c "import base64; print(base64.b64decode('aGVsbG8='))"
+python3 -c "print(bytes.fromhex('68656c6c6f'))"
+python3 -c "import hashlib; print(hashlib.sha256(b'hi').hexdigest())"</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Final summary -->
+  <div style="margin-top:28px;background:var(--panel2);border:1px solid var(--border2);padding:28px 32px;position:relative">
+    <div style="position:absolute;top:-1px;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--teal),var(--gold),transparent)"></div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--teal2);letter-spacing:.2em;text-transform:uppercase;margin-bottom:18px">// cryptography_mastery_checklist</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="font-family:var(--serif);font-size:13px;color:var(--text2);line-height:2.1">
+        ☐ Explain symmetric vs asymmetric with diagram<br>
+        ☐ Name AES modes and say which to use / avoid<br>
+        ☐ Describe RSA key generation steps<br>
+        ☐ Demonstrate Diffie-Hellman with small numbers<br>
+        ☐ Differentiate hash, MAC, HMAC, digital signature<br>
+        ☐ Explain why bcrypt beats SHA-256 for passwords
+      </div>
+      <div style="font-family:var(--serif);font-size:13px;color:var(--text2);line-height:2.1">
+        ☐ Trace a TLS 1.3 handshake step-by-step<br>
+        ☐ Explain certificate chain of trust<br>
+        ☐ Identify a hash by its hex length<br>
+        ☐ Crack a Caesar cipher by frequency analysis<br>
+        ☐ Explain padding oracle and length extension<br>
+        ☐ Write hybrid encryption in Python from scratch
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+// Sidebar navigation
+function go(id, el) {
+  document.getElementById(id)?.scrollIntoView({behavior:'smooth', block:'start'});
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// Card toggles
+function tog(id) { document.getElementById(id)?.classList.toggle('open'); }
+
+// Active section tracking
+const secs = document.querySelectorAll('section[id]');
+const links = document.querySelectorAll('.sb-link');
+new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const i = [...secs].indexOf(e.target);
+      links.forEach(l => l.classList.remove('active'));
+      if (links[i]) links[i].classList.add('active');
+    }
+  });
+}, {threshold: 0.25}).observe && secs.forEach(s =>
+  new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const i = [...secs].indexOf(e.target);
+        links.forEach(l => l.classList.remove('active'));
+        if (links[i]) links[i].classList.add('active');
+      }
+    });
+  }, {threshold: 0.25}).observe(s)
+);
+
+// Copy buttons
+function cp(btn) {
+  const pre = btn.closest('.code')?.querySelector('pre');
+  if (!pre) return;
+  navigator.clipboard.writeText(pre.textContent.trim()).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'copied!'; btn.style.color = 'var(--teal)';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
+  });
+}
+</script>
+</body>
 </html>

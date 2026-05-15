@@ -17,7 +17,7 @@ Then visit http://localhost:8080
 
 ## Deploy
 
-Deploy the folder as a static site (e.g., Vercel, Netlify, GitHub Pages). The clean routes are handled by folder `index.html` redirects.
+Deploy the folder as a static site (e.g., Vercel, Netlify, GitHub Pages). The clean routes are folder-based paths that serve each `index.html`.
 
 ### Vercel
 
@@ -27,8 +27,8 @@ Deploy the folder as a static site (e.g., Vercel, Netlify, GitHub Pages). The cl
 
 ## Routes
 
-- /cryptography
-- /90-day-plan
-- /linux-bash
-- /networking-fundamentals
-- /web-security-owasp
+- /cryptography/
+- /90-day-plan/
+- /linux-bash/
+- /networking-fundamentals/
+- /web-security-owasp/

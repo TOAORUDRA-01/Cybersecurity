@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cyber Security</title>
+    <style>
+      :root {
+        --bg: #0f1a24;
+        --panel: #162634;
+        --accent: #f1c40f;
+        --text: #e6eef5;
+        --muted: #9fb3c8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Times New Roman", Times, serif;
+        background: radial-gradient(circle at top, #1b2f40 0%, var(--bg) 55%);
+        color: var(--text);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+
+      main {
+        width: min(720px, 100%);
+        background: var(--panel);
+        border: 1px solid #22384b;
+        border-radius: 14px;
+        padding: 28px;
+        box-shadow: 0 24px 40px rgba(0, 0, 0, 0.35);
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 2.2rem;
+        letter-spacing: 0.04em;
+      }
+
+      p {
+        margin: 0 0 18px;
+        color: var(--muted);
+      }
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 10px;
+      }
+
+      a {
+        display: block;
+        text-decoration: none;
+        color: var(--text);
+        background: #1b3244;
+        border: 1px solid #28425a;
+        padding: 12px 14px;
+        border-radius: 10px;
+        transition: transform 120ms ease, border-color 120ms ease;
+      }
+
+      a:hover {
+        transform: translateY(-2px);
+        border-color: var(--accent);
+      }
+
+      .route {
+        display: block;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .desc {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .accent {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1><span class="accent">Cyber Security</span> Notes</h1>
+      <p>Quick links to every file in this folder.</p>
+      <ul>
+        <li>
+          <a href="/cryptography">
+            <span class="route">/cryptography</span>
+            <span class="desc">Cryptography foundations and reference notes.</span>
+          </a>
+        </li>
+        <li>
+          <a href="/90-day-plan">
+            <span class="route">/90-day-plan</span>
+            <span class="desc">A structured 90-day learning plan.</span>
+          </a>
+        </li>
+        <li>
+          <a href="/linux-bash">
+            <span class="route">/linux-bash</span>
+            <span class="desc">Linux and Bash commands for security work.</span>
+          </a>
+        </li>
+        <li>
+          <a href="/networking-fundamentals">
+            <span class="route">/networking-fundamentals</span>
+            <span class="desc">Core networking concepts and protocols.</span>
+          </a>
+        </li>
+        <li>
+          <a href="/web-security-owasp">
+            <span class="route">/web-security-owasp</span>
+            <span class="desc">OWASP-aligned web security notes.</span>
+          </a>
+        </li>
+      </ul>
+    </main>
+  </body>
+</html>

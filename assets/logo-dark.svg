@@ -1,0 +1,28 @@
+<svg width="960" height="320" viewBox="0 0 960 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#21E2D1"/>
+      <stop offset="100%" stop-color="#12B7B5"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="960" height="320" fill="#0B1414"/>
+
+  <!-- Icon: shield + lock circuit -->
+  <g transform="translate(40 24)">
+    <path d="M120 0 L220 36 V140 C220 198 180 244 120 272 C60 244 20 198 20 140 V36 L120 0 Z" fill="url(#g1)"/>
+    <path d="M120 56 C88 56 64 80 64 112 V144 C64 176 88 200 120 200 C152 200 176 176 176 144 V112 C176 80 152 56 120 56 Z" fill="#0B1414"/>
+    <rect x="96" y="88" width="48" height="72" rx="8" fill="url(#g1)"/>
+    <circle cx="120" cy="124" r="10" fill="#0B1414"/>
+    <path d="M44 144 H28 M212 144 H196 M120 220 V236" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+  </g>
+
+  <!-- Wordmark -->
+  <g transform="translate(340 72)">
+    <text x="0" y="90" font-family="'Trebuchet MS', 'Segoe UI', Arial, sans-serif" font-size="96" font-weight="700" letter-spacing="1" fill="#E6FFFD">Cyb</text>
+    <text x="220" y="90" font-family="'Trebuchet MS', 'Segoe UI', Arial, sans-serif" font-size="96" font-weight="700" letter-spacing="1" fill="#21E2D1">Sec</text>
+    <rect x="0" y="118" width="420" height="8" fill="#E6FFFD" opacity="0.16"/>
+    <text x="0" y="168" font-family="'Trebuchet MS', 'Segoe UI', Arial, sans-serif" font-size="20" letter-spacing="3" fill="#E6FFFD" opacity="0.7">CYBERSECURITY LEARNING</text>
+  </g>
+</svg>

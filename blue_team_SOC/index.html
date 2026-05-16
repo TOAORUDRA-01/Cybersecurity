@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blue Team & SOC — Operations Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Exo+2:ital,wght@0,200;0,300;0,400;0,500;1,300&family=Roboto+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   DESIGN SYSTEM — Live SOC Dashboard / 2AM Shift
+   ═══════════════════════════════════════════════ */
+:root {
+  --bg:       #0d1117;
+  --bg2:      #111820;
+  --bg3:      #141e28;
+  --bg4:      #182030;
+  --panel:    #1a2535;
+  --panel2:   #1e2d3e;
+  --blue:     #1e90ff;
+  --blue2:    #00bfff;
+  --blue3:    rgba(30,144,255,0.12);
+  --cyan:     #00e5ff;
+  --cyan2:    rgba(0,229,255,0.10);
+  --teal:     #00c8b4;
+  --teal2:    rgba(0,200,180,0.10);
+  --green:    #00e676;
+  --green2:   rgba(0,230,118,0.10);
+  --amber:    #ffab00;
+  --amber2:   rgba(255,171,0,0.10);
+  --red:      #ff1744;
+  --red2:     rgba(255,23,68,0.10);
+  --orange:   #ff6d00;
+  --purple:   #d500f9;
+  --text:     #c8d8e8;
+  --text2:    #8098b0;
+  --text3:    #485868;
+  --border:   rgba(30,144,255,0.12);
+  --border2:  rgba(30,144,255,0.25);
+  --border3:  rgba(0,229,255,0.20);
+  --disp:     'Rajdhani', sans-serif;
+  --body:     'Exo 2', sans-serif;
+  --mono:     'Roboto Mono', monospace;
+  --sw:       268px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+/* Scanline overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px
+  );
+  pointer-events: none; z-index: 0;
+}
+
+/* Blueprint grid */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    linear-gradient(rgba(30,144,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30,144,255,0.03) 1px, transparent 1px);
+  background-size: 36px 36px;
+  pointer-events: none; z-index: 0;
+}
+
+/* Pulse animation */
+@keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 6px currentColor} 50%{opacity:.4;box-shadow:0 0 2px currentColor} }
+@keyframes blink  { 0%,100%{opacity:1} 50%{opacity:0.2} }
+@keyframes sweep  { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+@keyframes glow   { 0%,100%{text-shadow:0 0 8px currentColor} 50%{text-shadow:0 0 20px currentColor,0 0 40px currentColor} }
+@keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+/* ═══ STATUS BAR ════════════════════════════ */
+.status-bar {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 32px; background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 16px; gap: 0; z-index: 300;
+  overflow: hidden;
+}
+.sb-logo {
+  font-family: var(--disp); font-size: 12px; font-weight: 700;
+  letter-spacing: .18em; color: var(--blue2);
+  text-transform: uppercase; flex-shrink: 0;
+  padding-right: 16px; border-right: 1px solid var(--border);
+  margin-right: 16px;
+}
+.sb-ticker-wrap { flex: 1; overflow: hidden; position: relative; }
+.sb-ticker {
+  display: flex; white-space: nowrap; gap: 48px;
+  animation: ticker 30s linear infinite;
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+}
+.sb-ticker span { flex-shrink: 0; }
+.sb-ticker .alert { color: var(--amber); }
+.sb-ticker .crit  { color: var(--red);   }
+.sb-ticker .ok    { color: var(--green); }
+.sb-time {
+  font-family: var(--mono); font-size: 11px;
+  color: var(--text2); flex-shrink: 0;
+  padding-left: 16px; border-left: 1px solid var(--border);
+}
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green); margin-right: 8px;
+  animation: pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+/* ═══ SIDEBAR ════════════════════════════════ */
+.sidebar {
+  position: fixed; left: 0; top: 32px; bottom: 0;
+  width: var(--sw);
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  z-index: 200; overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.sidebar::-webkit-scrollbar { width: 3px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border2); }
+
+.sb-head {
+  padding: 22px 18px 18px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.sb-head::after {
+  content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, var(--blue2), transparent);
+}
+.sb-eyebrow {
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: .20em; color: var(--text3);
+  text-transform: uppercase; margin-bottom: 8px;
+}
+.sb-title {
+  font-family: var(--disp); font-size: 20px; font-weight: 700;
+  color: var(--blue2); letter-spacing: .06em;
+  text-transform: uppercase; line-height: 1.1;
+  text-shadow: 0 0 20px rgba(0,191,255,0.3);
+}
+.sb-sub {
+  font-family: var(--mono); font-size: 9px;
+  color: var(--text3); margin-top: 6px; letter-spacing: .08em;
+}
+
+/* Alert severity mini-legend */
+.sb-sev-bar {
+  display: flex; gap: 0; margin: 10px 0 0;
+  overflow: hidden; border-radius: 2px;
+}
+.sev-seg { flex: 1; height: 3px; }
+.sev-critical { background: var(--red); }
+.sev-high     { background: var(--orange); }
+.sev-medium   { background: var(--amber); }
+.sev-low      { background: var(--blue2); }
+.sev-info     { background: var(--teal); }
+
+.sb-group {
+  padding: 12px 18px 4px;
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: .20em; text-transform: uppercase;
+  color: var(--text3); border-top: 1px solid var(--border);
+  margin-top: 8px;
+}
+.sb-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 18px; cursor: pointer; transition: all .15s;
+  border-left: 2px solid transparent;
+}
+.sb-item:hover { background: var(--blue3); }
+.sb-item.active { border-left-color: var(--blue2); background: var(--blue3); }
+.sb-n { font-family: var(--mono); font-size: 10px; color: var(--text3); min-width: 20px; }
+.sb-t { font-family: var(--body); font-size: 12px; color: var(--text2); }
+.sb-item.active .sb-t { color: var(--blue2); }
+.sb-item .sb-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--text3); margin-left: auto; flex-shrink: 0;
+}
+.sb-item.active .sb-dot { background: var(--blue2); animation: pulse 2s infinite; }
+
+.sb-foot {
+  margin-top: auto; padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  font-family: var(--mono); font-size: 9px;
+  color: var(--text3); line-height: 1.9;
+}
+
+/* ═══ MAIN ═══════════════════════════════════ */
+.main { margin-left: var(--sw); padding-top: 32px; position: relative; z-index: 1; }
+
+/* ═══ HERO ═══════════════════════════════════ */
+.hero {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border2);
+  padding: 52px 64px 44px;
+  position: relative; overflow: hidden;
+}
+.hero-radar {
+  position: absolute; right: 60px; top: 50%; transform: translateY(-50%);
+  width: 240px; height: 240px; border-radius: 50%;
+  border: 1px solid rgba(30,144,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+}
+.hero-radar::before {
+  content: ''; position: absolute; inset: 20px; border-radius: 50%;
+  border: 1px solid rgba(30,144,255,0.1);
+}
+.hero-radar::after {
+  content: ''; position: absolute; inset: 50px; border-radius: 50%;
+  border: 1px solid rgba(30,144,255,0.08);
+}
+.radar-sweep {
+  position: absolute; width: 50%; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0,229,255,0.6));
+  transform-origin: right center; right: 50%;
+  animation: sweep 4s linear infinite;
+  top: 50%; margin-top: -1px;
+}
+.radar-dot {
+  position: absolute; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--cyan); animation: pulse 2s infinite;
+}
+
+.hero-corner {
+  position: absolute; top: 18px; right: 18px;
+  font-family: var(--mono); font-size: 9px;
+  color: var(--text3); text-align: right; line-height: 1.8;
+}
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--blue2); margin-bottom: 18px;
+}
+.hero-tag::before { content: '//'; color: var(--text3); }
+.hero h1 {
+  font-family: var(--disp);
+  font-size: clamp(36px, 5.5vw, 64px);
+  font-weight: 700; color: #fff;
+  letter-spacing: .04em; line-height: 1.0;
+  text-transform: uppercase; margin-bottom: 8px;
+}
+.hero h1 .accent { color: var(--blue2); animation: glow 3s ease-in-out infinite; }
+.hero-sub-title {
+  font-family: var(--disp); font-size: 16px; font-weight: 400;
+  color: var(--text2); letter-spacing: .18em; text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.hero-brief {
+  font-family: var(--body); font-size: 13px; color: var(--text2);
+  font-weight: 300; font-style: italic;
+  max-width: 540px; line-height: 1.8;
+  border-left: 2px solid var(--border2); padding-left: 16px;
+}
+.hero-stats {
+  display: flex; gap: 0; margin-top: 36px;
+  border: 1px solid var(--border); width: fit-content;
+}
+.hs { padding: 14px 22px; border-right: 1px solid var(--border); text-align: center; }
+.hs:last-child { border-right: none; }
+.hs-val { font-family: var(--disp); font-size: 28px; font-weight: 700; color: var(--blue2); letter-spacing: .04em; }
+.hs-lbl { font-family: var(--mono); font-size: 9px; color: var(--text3); letter-spacing: .14em; text-transform: uppercase; margin-top: 2px; }
+
+/* ═══ SECTION ═══════════════════════════════ */
+.section {
+  padding: 50px 64px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  animation: fadeUp .35s ease both;
+}
+.section:nth-child(even) { background: rgba(17,24,32,0.6); }
+
+.sec-kicker { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.sec-num {
+  font-family: var(--disp); font-size: 52px; font-weight: 700;
+  color: rgba(30,144,255,0.10); line-height: 1; flex-shrink: 0;
+  letter-spacing: .04em; margin-top: -6px;
+}
+.sec-badge {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--cyan);
+  border: 1px solid var(--border3); padding: 3px 10px;
+  background: var(--cyan2);
+}
+.sec-title {
+  font-family: var(--disp); font-size: 26px; font-weight: 600;
+  color: #fff; letter-spacing: .06em; text-transform: uppercase;
+  margin-bottom: 6px; line-height: 1.1;
+}
+.sec-desc {
+  font-family: var(--body); font-size: 13px; color: var(--text2);
+  font-weight: 300; font-style: italic;
+  max-width: 680px; line-height: 1.75; margin-bottom: 30px;
+}
+
+/* ═══ PANELS / CARDS ═════════════════════════ */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  margin-bottom: 18px; overflow: hidden;
+  position: relative;
+}
+.card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, var(--blue3), rgba(0,229,255,0.08), transparent);
+}
+.card-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 18px; background: var(--panel2);
+  border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;
+}
+.card-hd h3 {
+  font-family: var(--disp); font-size: 15px; font-weight: 600;
+  color: var(--blue2); letter-spacing: .06em; text-transform: uppercase;
+}
+.card-tags { display: flex; gap: 6px; }
+.ct { font-family: var(--mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; padding: 2px 8px; border: 1px solid; }
+.ct-b { color: var(--blue2); border-color: rgba(30,144,255,.25); }
+.ct-c { color: var(--cyan);  border-color: rgba(0,229,255,.25); }
+.ct-g { color: var(--green); border-color: rgba(0,230,118,.25); }
+.ct-r { color: var(--red);   border-color: rgba(255,23,68,.25); }
+.ct-a { color: var(--amber); border-color: rgba(255,171,0,.25); }
+.ct-t { color: var(--teal);  border-color: rgba(0,200,180,.25); }
+.card-chev { color: var(--text3); font-size: 11px; transition: transform .2s; margin-left: 10px; }
+.card.open .card-chev { transform: rotate(180deg); }
+.card-bd { padding: 20px 18px; display: none; }
+.card.open .card-bd, .card.always .card-bd { display: block; }
+
+/* ═══ CODE ═══════════════════════════════════ */
+.code {
+  background: #060d14;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--blue3);
+  margin: 14px 0; overflow: hidden;
+}
+.code-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 14px; background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+.code-bar .cl { display: flex; align-items: center; gap: 10px; }
+.code-title { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: .10em; }
+.code-lang {
+  font-family: var(--disp); font-size: 9px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--cyan);
+  border: 1px solid var(--border3); padding: 1px 8px; background: var(--cyan2);
+}
+.copy-btn {
+  font-family: var(--mono); font-size: 10px; color: var(--text3);
+  background: none; border: 1px solid var(--border); padding: 2px 10px;
+  cursor: pointer; transition: all .15s; letter-spacing: .05em;
+}
+.copy-btn:hover { color: var(--cyan); border-color: var(--border3); }
+pre {
+  padding: 16px 18px; font-family: var(--mono); font-size: 12px;
+  line-height: 1.85; overflow-x: auto; color: var(--text);
+}
+pre::-webkit-scrollbar { height: 3px; }
+pre::-webkit-scrollbar-thumb { background: var(--border2); }
+.k  { color: var(--cyan); }
+.s  { color: var(--green); }
+.c  { color: var(--text3); font-style: italic; }
+.v  { color: var(--amber); }
+.f  { color: #b39dff; }
+.n  { color: var(--red); }
+.t  { color: var(--orange); }
+.p  { color: var(--blue2); font-weight: 500; }
+
+/* ═══ DIAGRAMS ═══════════════════════════════ */
+.diagram {
+  background: #060d14;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--teal2);
+  padding: 16px 20px; margin: 14px 0;
+  font-family: var(--mono); font-size: 11.5px;
+  line-height: 1.85; overflow-x: auto; white-space: pre;
+  color: var(--text2);
+}
+.dh { color: var(--blue2); font-weight: 600; }
+.dg { color: var(--green); }
+.dr { color: var(--red); }
+.db { color: var(--cyan); }
+.dy { color: var(--amber); }
+.dt2{ color: var(--teal); }
+.dd { color: var(--text3); }
+
+/* ═══ CALLOUTS ═══════════════════════════════ */
+.note {
+  border-left: 2px solid; padding: 12px 16px;
+  margin: 14px 0; font-size: 13.5px; line-height: 1.7;
+}
+.note-lbl { font-family: var(--mono); font-size: 9px; letter-spacing: .20em; text-transform: uppercase; font-weight: 600; margin-bottom: 5px; }
+.nb { border-color: var(--blue2); background: var(--blue3); }
+.nb .note-lbl { color: var(--blue2); }
+.nc { border-color: var(--cyan); background: var(--cyan2); }
+.nc .note-lbl { color: var(--cyan); }
+.ng { border-color: var(--green); background: var(--green2); }
+.ng .note-lbl { color: var(--green); }
+.na { border-color: var(--amber); background: var(--amber2); }
+.na .note-lbl { color: var(--amber); }
+.nr { border-color: var(--red); background: var(--red2); }
+.nr .note-lbl { color: var(--red); }
+
+/* ═══ TABLES ═════════════════════════════════ */
+.dt { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+.dt th {
+  background: var(--panel2); color: var(--cyan);
+  font-family: var(--disp); font-weight: 600; font-size: 11px;
+  letter-spacing: .08em; text-transform: uppercase;
+  padding: 10px 16px; text-align: left;
+  border-bottom: 1px solid var(--border2);
+}
+.dt td { padding: 9px 16px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+.dt tr:hover td { background: var(--blue3); }
+.mc { font-family: var(--mono); font-size: 11px; color: var(--cyan); }
+
+/* ═══ GRIDS ══════════════════════════════════ */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+.g12 { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
+@media(max-width:900px) {
+  .g2,.g3,.g12 { grid-template-columns: 1fr; }
+  .main { margin-left: 0; }
+  .sidebar { display: none; }
+  .hero,.section { padding: 36px 24px; }
+}
+.mini {
+  background: var(--panel);
+  border: 1px solid var(--border); padding: 15px 17px;
+}
+.mini h4 {
+  font-family: var(--disp); font-size: 12px; font-weight: 600;
+  color: var(--cyan); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 10px;
+}
+.mini p, .mini li { font-family: var(--body); font-size: 13px; color: var(--text2); line-height: 1.7; font-weight: 300; }
+.mini li { margin-bottom: 4px; }
+
+/* ═══ SEVERITY INDICATORS ════════════════════ */
+.sev-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .1em;
+  padding: 2px 8px; border: 1px solid; text-transform: uppercase;
+}
+.sev-crit { color: var(--red);    border-color: rgba(255,23,68,.3);  background: var(--red2); }
+.sev-high { color: var(--orange); border-color: rgba(255,109,0,.3);  background: rgba(255,109,0,.08); }
+.sev-med  { color: var(--amber);  border-color: rgba(255,171,0,.3);  background: var(--amber2); }
+.sev-low  { color: var(--blue2);  border-color: rgba(30,144,255,.3); background: var(--blue3); }
+.sev-info { color: var(--teal);   border-color: rgba(0,200,180,.3);  background: var(--teal2); }
+.sev-dot  { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 2s infinite; }
+
+/* ═══ ALERT FLOW DIAGRAM ═════════════════════ */
+.flow { display: flex; align-items: stretch; margin: 18px 0; overflow-x: auto; gap: 0; }
+.fl-step {
+  background: var(--panel2); border: 1px solid var(--border);
+  padding: 12px 16px; text-align: center; flex: 1; min-width: 90px;
+  position: relative; transition: border-color .2s;
+}
+.fl-step + .fl-step { border-left: none; }
+.fl-step::after {
+  content: '▶'; position: absolute; right: -10px; top: 50%;
+  transform: translateY(-50%); color: var(--text3); font-size: 11px; z-index: 1;
+}
+.fl-step:last-child::after { display: none; }
+.fl-step.hl { border-color: var(--blue2); border-top: 2px solid var(--blue2); }
+.fl-step.hl-r { border-color: var(--red); border-top: 2px solid var(--red); }
+.fl-step.hl-g { border-color: var(--green); border-top: 2px solid var(--green); }
+.fl-num { font-family: var(--disp); font-size: 22px; font-weight: 700; color: var(--border2); line-height: 1; }
+.fl-name { font-family: var(--disp); font-size: 11px; font-weight: 600; color: var(--text); letter-spacing: .06em; text-transform: uppercase; margin-top: 4px; }
+.fl-tool { font-family: var(--mono); font-size: 9px; color: var(--text3); margin-top: 5px; line-height: 1.5; }
+
+/* ═══ MISC ═══════════════════════════════════ */
+p { margin-bottom: 10px; font-size: 14px; color: var(--text2); font-weight: 300; }
+p:last-child { margin-bottom: 0; }
+strong { color: var(--text); font-weight: 500; }
+ul,ol { padding-left: 20px; margin: 8px 0; }
+li { margin-bottom: 5px; font-size: 13.5px; color: var(--text2); line-height: 1.7; font-weight: 300; }
+.mi { font-family: var(--mono); font-size: 11px; background: var(--panel); padding: 1px 6px; border: 1px solid var(--border); color: var(--cyan); }
+.tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.tpill { font-family: var(--mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; padding: 3px 10px; border: 1px solid var(--border); color: var(--text3); }
+hr { border: none; border-top: 1px solid var(--border); margin: 22px 0; }
+.divider { display: flex; align-items: center; gap: 12px; margin: 22px 0; font-family: var(--mono); font-size: 9px; letter-spacing: .20em; color: var(--text3); text-transform: uppercase; }
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ STATUS BAR ═══════════ -->
+<div class="status-bar">
+  <div class="sb-logo">SOC OPS CENTER</div>
+  <div class="live-dot"></div>
+  <div class="sb-ticker-wrap">
+    <div class="sb-ticker">
+      <span class="ok">▶ SIEM: OPERATIONAL</span>
+      <span class="alert">⚠ HIGH: Brute force detected on 192.168.1.45 — SSH port 22</span>
+      <span class="ok">▶ EDR: All endpoints reporting</span>
+      <span class="crit">■ CRITICAL: Possible lateral movement — Mimikatz signature</span>
+      <span class="ok">▶ Firewall: 2,847 events/min</span>
+      <span class="alert">⚠ MEDIUM: Unusual outbound DNS — possible exfiltration</span>
+      <span class="ok">▶ Log ingestion: 1.2M events/hour</span>
+      <span class="crit">■ HIGH: Unpatched CVE-2021-44228 detected on prod-web-02</span>
+      <!-- repeat for seamless loop -->
+      <span class="ok">▶ SIEM: OPERATIONAL</span>
+      <span class="alert">⚠ HIGH: Brute force detected on 192.168.1.45 — SSH port 22</span>
+      <span class="ok">▶ EDR: All endpoints reporting</span>
+      <span class="crit">■ CRITICAL: Possible lateral movement — Mimikatz signature</span>
+    </div>
+  </div>
+  <div class="sb-time" id="clock">--:--:-- UTC</div>
+</div>
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<nav class="sidebar">
+  <div class="sb-head">
+    <div class="sb-eyebrow">// blue team · vol. 04</div>
+    <div class="sb-title">Blue Team<br>& SOC</div>
+    <div class="sb-sub">deep dive · commands & code</div>
+    <div class="sb-sev-bar">
+      <div class="sev-seg sev-critical"></div>
+      <div class="sev-seg sev-high"></div>
+      <div class="sev-seg sev-medium"></div>
+      <div class="sev-seg sev-low"></div>
+      <div class="sev-seg sev-info"></div>
+    </div>
+  </div>
+
+  <div class="sb-group">Core Operations</div>
+  <div class="sb-item active" onclick="go('s1',this)"><span class="sb-n">01</span><span class="sb-t">SOC Structure & Roles</span><span class="sb-dot"></span></div>
+  <div class="sb-item" onclick="go('s2',this)"><span class="sb-n">02</span><span class="sb-t">Log Analysis & Sources</span><span class="sb-dot"></span></div>
+  <div class="sb-item" onclick="go('s3',this)"><span class="sb-n">03</span><span class="sb-t">SIEM — Splunk & ELK</span><span class="sb-dot"></span></div>
+  <div class="sb-item" onclick="go('s4',this)"><span class="sb-n">04</span><span class="sb-t">Network Monitoring</span><span class="sb-dot"></span></div>
+  <div class="sb-group">Defense</div>
+  <div class="sb-item" onclick="go('s5',this)"><span class="sb-n">05</span><span class="sb-t">Incident Response</span><span class="sb-dot"></span></div>
+  <div class="sb-item" onclick="go('s6',this)"><span class="sb-n">06</span><span class="sb-t">Threat Intelligence</span><span class="sb-dot"></span></div>
+  <div class="sb-item" onclick="go('s7',this)"><span class="sb-n">07</span><span class="sb-t">Threat Hunting</span><span class="sb-dot"></span></div>
+  <div class="sb-item" onclick="go('s8',this)"><span class="sb-n">08</span><span class="sb-t">EDR & Endpoint Defense</span><span class="sb-dot"></span></div>
+  <div class="sb-group">Advanced</div>
+  <div class="sb-item" onclick="go('s9',this)"><span class="sb-n">09</span><span class="sb-t">MITRE ATT&CK Mapping</span><span class="sb-dot"></span></div>
+  <div class="sb-item" onclick="go('s10',this)"><span class="sb-n">10</span><span class="sb-t">Quick Reference</span><span class="sb-dot"></span></div>
+
+  <div class="sb-foot">
+    topics: 10 · tools: 25+<br>
+    platforms: splunk · elk · wazuh<br>
+    exam: cysA+ · btl1 · soc-l2
+  </div>
+</nav>
+
+<!-- ═══════════ MAIN ═══════════════ -->
+<main class="main">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-radar">
+    <div class="radar-sweep"></div>
+    <div class="radar-dot" style="top:35%;left:60%"></div>
+    <div class="radar-dot" style="top:60%;left:45%;animation-delay:.5s;background:var(--red)"></div>
+    <div class="radar-dot" style="top:45%;left:35%;animation-delay:1s;background:var(--amber)"></div>
+  </div>
+  <div class="hero-corner">
+    SHIFT: 0200–1000 UTC<br>
+    ANALYST: RUDRA<br>
+    STATUS: <span style="color:var(--green)">● ACTIVE</span>
+  </div>
+  <div class="hero-tag">phase 3 · defensive operations</div>
+  <h1>Blue Team<br>& <span class="accent">SOC</span></h1>
+  <div class="hero-sub-title">Security Operations Center · Deep Dive</div>
+  <p class="hero-brief">Complete operational reference for SOC analysts and blue team defenders — log analysis, SIEM operations, incident response, threat hunting, MITRE ATT&CK, EDR, and network monitoring. Built for CySA+, BTL1, and real-world SOC work.</p>
+  <div class="hero-stats">
+    <div class="hs"><div class="hs-val">10</div><div class="hs-lbl">Topics</div></div>
+    <div class="hs"><div class="hs-val">25+</div><div class="hs-lbl">Tools</div></div>
+    <div class="hs"><div class="hs-val">80+</div><div class="hs-lbl">Commands</div></div>
+    <div class="hs"><div class="hs-val">CySA+</div><div class="hs-lbl">Exam Level</div></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════
+     S1 · SOC STRUCTURE
+═══════════════════════════════════════════════════ -->
+<section class="section" id="s1">
+  <div class="sec-kicker"><div class="sec-num">01</div><div class="sec-badge">operations</div></div>
+  <div class="sec-title">SOC Structure & Roles</div>
+  <p class="sec-desc">The Security Operations Center is the nerve center of defensive security — monitoring, detecting, analyzing, and responding to threats 24/7.</p>
+
+  <div class="diagram"><span class="dh">SOC ORGANIZATIONAL STRUCTURE</span>
+
+<span class="db">TIER 1 — Alert Triage Analysts</span>
+  <span class="dd">├── Monitor SIEM dashboards, alert queues</span>
+  <span class="dd">├── Initial triage: true positive vs false positive</span>
+  <span class="dd">├── Escalate confirmed incidents to Tier 2</span>
+  <span class="dd">└── Response time: seconds to minutes</span>
+
+<span class="db">TIER 2 — Incident Responders</span>
+  <span class="dd">├── Deep investigation of escalated alerts</span>
+  <span class="dd">├── Threat containment and eradication</span>
+  <span class="dd">├── Correlation across multiple data sources</span>
+  <span class="dd">└── Coordinate with IT for remediation</span>
+
+<span class="db">TIER 3 — Threat Hunters / Senior Analysts</span>
+  <span class="dd">├── Proactive threat hunting (no alert needed)</span>
+  <span class="dd">├── Malware analysis and reverse engineering</span>
+  <span class="dd">├── Develop detection rules and playbooks</span>
+  <span class="dd">└── Threat intelligence integration</span>
+
+<span class="dt2">SOC Manager</span>  →  <span class="dt2">CISO</span>  →  Executive Leadership
+<span class="dd">Metrics, SLAs, tool procurement, team training</span></div>
+
+  <div class="g3">
+    <div class="mini">
+      <h4>Key SOC Metrics</h4>
+      <table class="dt" style="margin-top:8px;font-size:12px">
+        <tr><th>Metric</th><th>Target</th></tr>
+        <tr><td>MTTD (Mean Time to Detect)</td><td class="mc">&lt; 24h</td></tr>
+        <tr><td>MTTR (Mean Time to Respond)</td><td class="mc">&lt; 4h (critical)</td></tr>
+        <tr><td>False Positive Rate</td><td class="mc">&lt; 10%</td></tr>
+        <tr><td>Alert Backlog</td><td class="mc">0 unreviewed</td></tr>
+        <tr><td>Dwell Time</td><td class="mc">&lt; 200 days</td></tr>
+      </table>
+    </div>
+    <div class="mini">
+      <h4>Essential SOC Tools</h4>
+      <ul>
+        <li><strong>SIEM:</strong> Splunk, IBM QRadar, Microsoft Sentinel, ELK</li>
+        <li><strong>SOAR:</strong> Palo Alto XSOAR, Splunk SOAR, TheHive</li>
+        <li><strong>EDR:</strong> CrowdStrike, SentinelOne, Carbon Black, Wazuh</li>
+        <li><strong>IDS/IPS:</strong> Snort, Suricata, Zeek</li>
+        <li><strong>Ticketing:</strong> ServiceNow, Jira, TheHive</li>
+        <li><strong>TI Platform:</strong> MISP, OpenCTI, VirusTotal</li>
+      </ul>
+    </div>
+    <div class="mini">
+      <h4>SOC Alert Severity</h4>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+        <div style="display:flex;align-items:center;gap:8px"><span class="sev-badge sev-crit"><span class="sev-dot"></span>Critical</span><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">Immediate response &lt;15min</span></div>
+        <div style="display:flex;align-items:center;gap:8px"><span class="sev-badge sev-high"><span class="sev-dot"></span>High</span><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">Response &lt;1h</span></div>
+        <div style="display:flex;align-items:center;gap:8px"><span class="sev-badge sev-med"><span class="sev-dot"></span>Medium</span><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">Response &lt;4h</span></div>
+        <div style="display:flex;align-items:center;gap:8px"><span class="sev-badge sev-low"><span class="sev-dot"></span>Low</span><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">Next business day</span></div>
+        <div style="display:flex;align-items:center;gap:8px"><span class="sev-badge sev-info"><span class="sev-dot"></span>Info</span><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">No action required</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════
+     S2 · LOG ANALYSIS
+═══════════════════════════════════════════════════ -->
+<section class="section" id="s2">
+  <div class="sec-kicker"><div class="sec-num">02</div><div class="sec-badge">core skill</div></div>
+  <div class="sec-title">Log Analysis & Sources</div>
+  <p class="sec-desc">Logs are the SOC analyst's primary evidence source. Knowing where to find them, what they contain, and how to parse them is fundamental.</p>
+
+  <div class="card always">
+    <div class="card-hd"><h3>Critical Log Sources</h3><div class="card-tags"><span class="ct ct-b">Windows</span><span class="ct ct-c">Linux</span><span class="ct ct-g">Network</span></div></div>
+    <div class="card-bd">
+      <div class="g2">
+        <div>
+          <p><strong>Windows Event Logs — Key Event IDs:</strong></p>
+          <table class="dt" style="margin-top:10px">
+            <tr><th>Event ID</th><th>What It Means</th><th>Why It Matters</th></tr>
+            <tr><td class="mc" style="color:var(--red)">4624</td><td>Successful logon</td><td>Track all logins — time, user, source IP</td></tr>
+            <tr><td class="mc" style="color:var(--red)">4625</td><td>Failed logon</td><td>Brute force detection — many in short time</td></tr>
+            <tr><td class="mc" style="color:var(--amber)">4648</td><td>Logon with explicit creds</td><td>Lateral movement — Pass-the-Hash indicator</td></tr>
+            <tr><td class="mc" style="color:var(--amber)">4672</td><td>Admin privileges assigned</td><td>Privilege escalation detection</td></tr>
+            <tr><td class="mc" style="color:var(--red)">4688</td><td>New process created</td><td>Malware execution — check cmd.exe, powershell</td></tr>
+            <tr><td class="mc" style="color:var(--amber)">4698</td><td>Scheduled task created</td><td>Persistence mechanism</td></tr>
+            <tr><td class="mc" style="color:var(--red)">4720</td><td>User account created</td><td>Backdoor account creation</td></tr>
+            <tr><td class="mc" style="color:var(--amber)">4776</td><td>NTLM auth attempt</td><td>Pass-the-Hash / credential attacks</td></tr>
+            <tr><td class="mc" style="color:var(--red)">7045</td><td>New service installed</td><td>Persistence / malware as service</td></tr>
+            <tr><td class="mc" style="color:var(--cyan)">1102</td><td>Audit log cleared</td><td>Attacker covering tracks — critical alert!</td></tr>
+          </table>
+        </div>
+        <div>
+          <p><strong>Linux Log Files:</strong></p>
+          <table class="dt" style="margin-top:10px">
+            <tr><th>Log File</th><th>Contains</th><th>Key Patterns</th></tr>
+            <tr><td class="mc">/var/log/auth.log</td><td>Auth events, SSH, sudo</td><td>"Failed password", "Accepted password"</td></tr>
+            <tr><td class="mc">/var/log/syslog</td><td>General system events</td><td>Service starts/stops, errors</td></tr>
+            <tr><td class="mc">/var/log/kern.log</td><td>Kernel messages</td><td>Hardware errors, kernel exploits</td></tr>
+            <tr><td class="mc">/var/log/secure</td><td>Auth (RHEL/CentOS)</td><td>Same as auth.log</td></tr>
+            <tr><td class="mc">/var/log/nginx/access.log</td><td>Web requests</td><td>SQL injection, scanner patterns</td></tr>
+            <tr><td class="mc">/var/log/audit/audit.log</td><td>Audit daemon events</td><td>File access, syscalls</td></tr>
+          </table>
+          <div class="note na" style="margin-top:10px">
+            <div class="note-lbl">Windows Log Locations</div>
+            Event Viewer (GUI) or PowerShell/cmd:<br>
+            <span class="mi">Security</span> → 4624, 4625, 4688 etc.<br>
+            <span class="mi">System</span> → 7045 (new service)<br>
+            <span class="mi">Application</span> → app-specific events<br>
+            <span class="mi">Microsoft-Windows-PowerShell/Operational</span> → PS execution
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="c2b">
+    <div class="card-hd" onclick="tog('c2b')"><h3>Log Analysis Commands</h3><div class="card-tags"><span class="ct ct-c">Linux</span><span class="ct ct-b">PowerShell</span></div><span class="card-chev">▾</span></div>
+    <div class="card-bd">
+      <div class="g2">
+        <div>
+          <div class="code">
+            <div class="code-bar"><div class="cl"><span class="code-title">Linux log analysis</span></div><div style="display:flex;gap:6px"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+            <pre><span class="c"># ── SSH BRUTE FORCE DETECTION ─────────────────</span>
+<span class="f">grep</span> <span class="s">"Failed password"</span> /var/log/auth.log | \
+  <span class="f">awk</span> <span class="s">'{print $11}'</span> | <span class="f">sort</span> | <span class="f">uniq -c</span> | <span class="f">sort -rn</span> | <span class="f">head</span>
+<span class="c"># Shows top IPs by failed attempts</span>
+
+<span class="c"># Successful logins after failures (compromise?)</span>
+<span class="f">grep</span> <span class="s">"Accepted password"</span> /var/log/auth.log
+<span class="f">grep</span> <span class="s">"Failed password"</span> /var/log/auth.log | \
+  <span class="f">grep</span> <span class="s">"root"</span>
+
+<span class="c"># ── WEB LOG ANALYSIS ──────────────────────────</span>
+<span class="c"># Top IPs by requests</span>
+<span class="f">awk</span> <span class="s">'{print $1}'</span> /var/log/nginx/access.log | \
+  <span class="f">sort</span> | <span class="f">uniq -c</span> | <span class="f">sort -rn</span> | <span class="f">head</span> <span class="v">20</span>
+
+<span class="c"># HTTP 4xx/5xx errors</span>
+<span class="f">grep</span> <span class="v">-E</span> <span class="s">" [45][0-9]{2} "</span> /var/log/nginx/access.log
+
+<span class="c"># Detect scanners/attack tools</span>
+<span class="f">grep</span> <span class="v">-iE</span> <span class="s">"sqlmap|nikto|nmap|masscan|gobuster"</span> /var/log/nginx/access.log
+
+<span class="c"># SQLi patterns in URLs</span>
+<span class="f">grep</span> <span class="v">-iE</span> <span class="s">"union.*select|%27|script.*alert|\.\./"</span> /var/log/nginx/access.log
+
+<span class="c"># ── REAL-TIME MONITORING ─────────────────────</span>
+<span class="f">tail</span> <span class="v">-f</span> /var/log/auth.log /var/log/syslog
+<span class="f">journalctl</span> <span class="v">-f</span>
+<span class="f">journalctl</span> <span class="v">-u sshd --since "1 hour ago"</span>
+<span class="f">journalctl</span> <span class="v">-p err -n 50</span>   <span class="c"># last 50 errors</span></pre>
+          </div>
+        </div>
+        <div>
+          <div class="code">
+            <div class="code-bar"><div class="cl"><span class="code-title">Windows event log analysis</span></div><div style="display:flex;gap:6px"><span class="code-lang">PowerShell</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+            <pre><span class="c"># ── FAILED LOGONS (4625) ──────────────────────</span>
+Get-WinEvent -FilterHashtable @{
+  LogName=<span class="s">'Security'</span>; Id=<span class="v">4625</span>
+} -MaxEvents <span class="v">100</span> | Select-Object TimeCreated,
+  @{N=<span class="s">'User'</span>;E={$_.Properties[<span class="v">5</span>].Value}},
+  @{N=<span class="s">'IP'</span>;E={$_.Properties[<span class="v">19</span>].Value}}
+
+<span class="c"># ── PROCESS CREATION (4688) ───────────────────</span>
+Get-WinEvent -FilterHashtable @{
+  LogName=<span class="s">'Security'</span>; Id=<span class="v">4688</span>
+} | Where-Object {
+  $_.Message <span class="v">-match</span> <span class="s">'powershell|cmd|wscript|cscript'</span>
+} | Select-Object TimeCreated, Message
+
+<span class="c"># ── NEW SERVICES (7045) ───────────────────────</span>
+Get-WinEvent -FilterHashtable @{
+  LogName=<span class="s">'System'</span>; Id=<span class="v">7045</span>
+} | Select-Object TimeCreated,
+  @{N=<span class="s">'Service'</span>;E={$_.Properties[<span class="v">0</span>].Value}},
+  @{N=<span class="s">'Path'</span>;E={$_.Properties[<span class="v">1</span>].Value}}
+
+<span class="c"># ── LOG CLEARED (1102) ────────────────────────</span>
+Get-WinEvent -FilterHashtable @{
+  LogName=<span class="s">'Security'</span>; Id=<span class="v">1102</span>
+}   <span class="c"># If this fires → CRITICAL ALERT!</span>
+
+<span class="c"># ── LIVE MONITORING ───────────────────────────</span>
+<span class="c"># Watch for new 4625 events in real time</span>
+Register-WmiEvent -Class Win32_NTLogEvent -Filter <span class="s">"EventCode=4625"</span> -Action {
+  Write-Host <span class="s">"BRUTE FORCE: $($event.SourceEventArgs.NewEvent.InsertionStrings)"</span>
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════
+     S3 · SIEM
+═══════════════════════════════════════════════════ -->
+<section class="section" id="s3">
+  <div class="sec-kicker"><div class="sec-num">03</div><div class="sec-badge">platform</div></div>
+  <div class="sec-title">SIEM — Splunk & ELK Stack</div>
+  <p class="sec-desc">Security Information and Event Management — aggregates logs from across the infrastructure, correlates events, and generates alerts from rules and ML detections.</p>
+
+  <div class="card always">
+    <div class="card-hd"><h3>Splunk — Search Processing Language (SPL)</h3><div class="card-tags"><span class="ct ct-b">Splunk</span><span class="ct ct-a">SPL</span></div></div>
+    <div class="card-bd">
+      <div class="diagram"><span class="dh">SPL QUERY STRUCTURE</span>
+
+<span class="db">index=</span><span class="dy">windows</span> <span class="db">EventCode=</span><span class="dy">4625</span> <span class="dd">| </span><span class="k">stats count</span> <span class="dd">by</span> <span class="dg">src_ip</span> <span class="dd">| </span><span class="k">sort -count</span> <span class="dd">| </span><span class="k">head 10</span>
+
+<span class="dd"> ↑ Search         ↑ Filter        ↑ Aggregation      ↑ Sort     ↑ Limit</span>
+
+<span class="dd">Data flow:  Search → Filter → Eval → Stats → Sort → Table → Visualize</span></div>
+      <div class="code">
+        <div class="code-bar"><div class="cl"><span class="code-title">Splunk SPL queries for SOC analysts</span></div><div style="display:flex;gap:6px"><span class="code-lang">SPL</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c">| ── BRUTE FORCE DETECTION ──────────────────────────────────────────────</span>
+index=<span class="v">windows</span> EventCode=<span class="v">4625</span>
+| <span class="k">stats</span> count <span class="k">by</span> src_ip, user, dest_host
+| <span class="k">where</span> count > <span class="v">10</span>
+| <span class="k">sort</span> -count
+| <span class="k">eval</span> severity=<span class="k">if</span>(count><span class="v">50</span>,<span class="s">"CRITICAL"</span>,<span class="k">if</span>(count><span class="v">20</span>,<span class="s">"HIGH"</span>,<span class="s">"MEDIUM"</span>))
+
+<span class="c">| ── SUCCESSFUL LOGIN AFTER FAILURES (Account Compromise) ──────────────</span>
+index=<span class="v">windows</span> EventCode <span class="k">IN</span> (<span class="v">4625</span>,<span class="v">4624</span>)
+| <span class="k">eval</span> event_type=<span class="k">if</span>(EventCode==<span class="v">4624</span>,<span class="s">"success"</span>,<span class="s">"failure"</span>)
+| <span class="k">stats</span> values(event_type) <span class="k">as</span> events, count <span class="k">by</span> src_ip, user
+| <span class="k">where</span> mvfind(events,<span class="s">"failure"</span>)>=<span class="v">0</span> AND mvfind(events,<span class="s">"success"</span>)>=<span class="v">0</span>
+
+<span class="c">| ── SUSPICIOUS PROCESS EXECUTION ──────────────────────────────────────</span>
+index=<span class="v">windows</span> EventCode=<span class="v">4688</span>
+| <span class="k">where</span> match(New_Process_Name, <span class="s">"(?i)powershell|cmd|wscript|cscript|mshta|rundll32"</span>)
+| <span class="k">table</span> _time, host, Account_Name, New_Process_Name, Process_Command_Line
+| <span class="k">sort</span> -_time
+
+<span class="c">| ── LATERAL MOVEMENT DETECTION ─────────────────────────────────────────</span>
+index=<span class="v">windows</span> EventCode=<span class="v">4624</span> Logon_Type=<span class="v">3</span>
+| <span class="k">stats</span> dc(dest_host) <span class="k">as</span> unique_dests, values(dest_host) <span class="k">as</span> destinations <span class="k">by</span> src_ip, user
+| <span class="k">where</span> unique_dests > <span class="v">5</span>
+| <span class="k">sort</span> -unique_dests
+
+<span class="c">| ── DATA EXFILTRATION DETECTION ────────────────────────────────────────</span>
+index=<span class="v">firewall</span> action=<span class="s">"allowed"</span> direction=<span class="s">"outbound"</span>
+| <span class="k">stats</span> sum(bytes_out) <span class="k">as</span> total_bytes <span class="k">by</span> src_ip, dest_ip, dest_port
+| <span class="k">where</span> total_bytes > <span class="v">100000000</span>
+| <span class="k">eval</span> total_MB=round(total_bytes/<span class="v">1024</span>/<span class="v">1024</span>,<span class="v">2</span>)
+| <span class="k">sort</span> -total_MB
+
+<span class="c">| ── DNS TUNNELING DETECTION ────────────────────────────────────────────</span>
+index=<span class="v">dns</span> query_type=<span class="s">"TXT"</span>
+| <span class="k">eval</span> query_len=len(query)
+| <span class="k">where</span> query_len > <span class="v">60</span>
+| <span class="k">stats</span> count, values(query) <span class="k">as</span> queries <span class="k">by</span> src_ip, dest_domain
+| <span class="k">sort</span> -count
+
+<span class="c">| ── LOG CLEARED ALERT ──────────────────────────────────────────────────</span>
+index=<span class="v">windows</span> EventCode=<span class="v">1102</span> OR EventCode=<span class="v">104</span>
+| <span class="k">table</span> _time, host, Account_Name, EventCode
+| <span class="k">eval</span> severity=<span class="s">"CRITICAL — Possible Cover-Up"</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="c3b">
+    <div class="card-hd" onclick="tog('c3b')"><h3>ELK Stack — Elasticsearch, Logstash, Kibana</h3><div class="card-tags"><span class="ct ct-c">ELK</span><span class="ct ct-t">KQL</span></div><span class="card-chev">▾</span></div>
+    <div class="card-bd">
+      <div class="g2">
+        <div>
+          <div class="diagram"><span class="dh">ELK ARCHITECTURE</span>
+
+<span class="dg">DATA SOURCES</span>         <span class="db">LOGSTASH</span>          <span class="dy">ELASTICSEARCH</span>
+  Syslog           →  Parse/Filter   →  Store/Index
+  Windows Events   →  Enrich         →  Search
+  Firewall Logs    →  Transform      →  Aggregate
+  Web Server Logs  →  Route          →
+                                         ↓
+                                     <span class="dt2">KIBANA</span>
+                                     Visualize
+                                     Dashboard
+                                     Alerts (Watcher)</div>
+          <p><strong>Kibana Query Language (KQL):</strong></p>
+          <div class="code">
+            <div class="code-bar"><div class="cl"><span class="code-title">KQL queries</span></div><div style="display:flex;gap:6px"><span class="code-lang">KQL</span></div></div>
+            <pre style="font-size:11px"><span class="c"># Basic field search</span>
+event.code: <span class="v">4625</span> <span class="k">and</span> winlog.event_data.LogonType: <span class="v">3</span>
+
+<span class="c"># Failed SSH logins</span>
+event.category: authentication <span class="k">and</span> event.outcome: failure
+<span class="k">and</span> source.ip: *
+
+<span class="c"># Suspicious processes</span>
+process.name: (<span class="s">"powershell.exe"</span> <span class="k">or</span> <span class="s">"cmd.exe"</span> <span class="k">or</span> <span class="s">"mshta.exe"</span>)
+<span class="k">and not</span> user.name: <span class="s">"SYSTEM"</span>
+
+<span class="c"># Network connections to suspicious ports</span>
+destination.port: (<span class="v">4444</span> <span class="k">or</span> <span class="v">1337</span> <span class="k">or</span> <span class="v">31337</span>)
+<span class="k">and</span> network.direction: egress</pre>
+          </div>
+        </div>
+        <div>
+          <div class="code">
+            <div class="code-bar"><div class="cl"><span class="code-title">Logstash pipeline config</span></div><div style="display:flex;gap:6px"><span class="code-lang">config</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+            <pre style="font-size:11px"><span class="c"># Logstash pipeline for syslog</span>
+<span class="k">input</span> {
+  syslog {
+    port => <span class="v">5514</span>
+    type => <span class="s">"syslog"</span>
+  }
+  beats {
+    port => <span class="v">5044</span>
+  }
+}
+<span class="k">filter</span> {
+  <span class="k">if</span> [type] == <span class="s">"syslog"</span> {
+    grok {
+      match => { <span class="s">"message"</span> => <span class="s">"%{SYSLOGBASE} %{GREEDYDATA:msg}"</span> }
+    }
+    date {
+      match => [ <span class="s">"timestamp"</span>, <span class="s">"MMM  d HH:mm:ss"</span> ]
+    }
+  }
+  geoip { source => <span class="s">"src_ip"</span> }
+  <span class="k">if</span> <span class="s">"Failed password"</span> in [message] {
+    mutate { add_tag => [<span class="s">"brute_force"</span>, <span class="s">"auth_failure"</span>] }
+  }
+}
+<span class="k">output</span> {
+  elasticsearch {
+    hosts => [<span class="s">"localhost:9200"</span>]
+    index => <span class="s">"syslog-%{+YYYY.MM.dd}"</span>
+  }
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════
+     S4 · NETWORK MONITORING
+═══════════════════════════════════════════════════ -->
+<section class="section" id="s4">
+  <div class="sec-kicker"><div class="sec-num">04</div><div class="sec-badge">monitoring</div></div>
+  <div class="sec-title">Network Monitoring & Analysis</div>
+  <p class="sec-desc">Capturing, analyzing, and alerting on network traffic. IDS/IPS, packet analysis, netflow monitoring, and baseline deviation detection.</p>
+
+  <div class="g2">
+    <div>
+      <div class="code">
+        <div class="code-bar"><div class="cl"><span class="code-title">Wireshark / tcpdump — packet analysis</span></div><div style="display:flex;gap:6px"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># ── TCPDUMP CAPTURE ───────────────────────────</span>
+<span class="c"># Capture all traffic, save to file</span>
+sudo tcpdump <span class="v">-i eth0 -w</span> capture.pcap
+
+<span class="c"># Capture specific host</span>
+sudo tcpdump <span class="v">-i eth0</span> host <span class="v">192.168.1.5</span> <span class="v">-w</span> host.pcap
+
+<span class="c"># Capture specific port</span>
+sudo tcpdump <span class="v">-i eth0</span> port <span class="v">443</span> <span class="v">-w</span> https.pcap
+
+<span class="c"># Detect port scanning (many SYNs, no SYN-ACK)</span>
+sudo tcpdump <span class="v">-i eth0</span> <span class="s">'tcp[tcpflags] == tcp-syn'</span>
+
+<span class="c"># ── WIRESHARK DISPLAY FILTERS ─────────────────</span>
+<span class="c"># Detect SYN scans</span>
+tcp.flags.syn==1 and tcp.flags.ack==0
+
+<span class="c"># ARP poisoning (multiple IPs, same MAC)</span>
+arp.duplicate-address-detected
+
+<span class="c"># DNS queries with long names (tunneling)</span>
+dns.qry.name.len > 50
+
+<span class="c"># Large outbound transfers</span>
+ip.src == 192.168.1.0/24 and tcp.len > 5000
+
+<span class="c"># Suspicious cleartext credentials</span>
+http.request.method == "POST" and
+http contains "password"
+
+<span class="c"># Beaconing — regular interval connections</span>
+frame contains "User-Agent: " and
+http.request.uri contains "/beacon"</pre>
+      </div>
+    </div>
+    <div>
+      <div class="code">
+        <div class="code-bar"><div class="cl"><span class="code-title">Zeek / Suricata / Snort</span></div><div style="display:flex;gap:6px"><span class="code-lang">bash/rules</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># ── ZEEK (network analysis framework) ─────────</span>
+<span class="c"># Zeek auto-generates structured logs:</span>
+<span class="c"># conn.log — all connections</span>
+<span class="c"># dns.log  — DNS queries</span>
+<span class="c"># http.log — HTTP requests</span>
+<span class="c"># ssl.log  — TLS info</span>
+<span class="c"># files.log — file transfers</span>
+
+<span class="c"># Analyze Zeek conn.log for beaconing</span>
+<span class="f">cat</span> conn.log | <span class="f">zeek-cut</span> id.orig_h id.resp_h duration | \
+  <span class="f">sort</span> | <span class="f">uniq -c</span> | <span class="f">sort -rn</span> | <span class="f">head</span>
+
+<span class="c"># ── SURICATA RULES ────────────────────────────</span>
+<span class="c"># Detect reverse shell via nc</span>
+alert tcp any any -> any any (
+  msg:"POSSIBLE NETCAT REVERSE SHELL";
+  content:"bash -i"; nocase;
+  sid:1000001; rev:1;
+)
+
+<span class="c"># Detect Mimikatz</span>
+alert smb any any -> $HOME_NET any (
+  msg:"MIMIKATZ LSASS DUMP";
+  content:"sekurlsa"; nocase;
+  sid:1000002; rev:1;
+)
+
+<span class="c"># ── SNORT RULES ───────────────────────────────</span>
+<span class="c"># SQL injection detection</span>
+alert tcp any any -> $HTTP_SERVERS $HTTP_PORTS (
+  msg:"SQL INJECTION ATTEMPT";
+  pcre:"/(\%27)|(\')|(\-\-)|(%23)|(#)/i";
+  classtype:web-application-attack;
+  sid:2000001; rev:1;
+)</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="note nb" style="margin-top:16px">
+    <div class="note-lbl">Beaconing Detection</div>
+    Malware often "beacons" home at regular intervals (every 60s, every 5min). Look for connections to the same external IP at suspiciously regular intervals. In Splunk: <span class="mi">| stats count, range(_time) as duration, values(dest_port) by src_ip, dest_ip | eval beacon_interval = duration/count</span>. Low variance = likely beaconing.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════
+     S5 · INCIDENT RESPONSE
+═══════════════════════════════════════════════════ -->
+<section class="section" id="s5">
+  <div class="sec-kicker"><div class="sec-num">05</div><div class="sec-badge">critical process</div></div>
+  <div class="sec-title">Incident Response</div>
+  <p class="sec-desc">The structured process for handling security incidents — from initial detection through containment, eradication, recovery, and lessons learned.</p>
+
+  <!-- IR flow -->
+  <div class="flow">
+    <div class="fl-step hl"><div class="fl-num">1</div><div class="fl-name">Preparation</div><div class="fl-tool">Playbooks<br>IR Team<br>Tools ready</div></div>
+    <div class="fl-step"><div class="fl-num">2</div><div class="fl-name">Identification</div><div class="fl-tool">SIEM alert<br>User report<br>IDS trigger</div></div>
+    <div class="fl-step hl-r"><div class="fl-num">3</div><div class="fl-name">Containment</div><div class="fl-tool">Isolate host<br>Block IP<br>Kill process</div></div>
+    <div class="fl-step"><div class="fl-num">4</div><div class="fl-name">Eradication</div><div class="fl-tool">Remove malware<br>Close vuln<br>Patch system</div></div>
+    <div class="fl-step"><div class="fl-num">5</div><div class="fl-name">Recovery</div><div class="fl-tool">Restore service<br>Monitor closely<br>Verify clean</div></div>
+    <div class="fl-step hl-g"><div class="fl-num">6</div><div class="fl-name">Lessons Learned</div><div class="fl-tool">Post-mortem<br>Improve rules<br>Update playbooks</div></div>
+  </div>
+
+  <div class="card always" style="margin-top:20px">
+    <div class="card-hd"><h3>Incident Response Commands — Live Response</h3><div class="card-tags"><span class="ct ct-r">IR</span><span class="ct ct-a">Live Response</span></div></div>
+    <div class="card-bd">
+      <div class="g2">
+        <div>
+          <div class="code">
+            <div class="code-bar"><div class="cl"><span class="code-title">Linux live response triage</span></div><div style="display:flex;gap:6px"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+            <pre><span class="c"># ── COLLECT VOLATILE DATA FIRST ───────────────</span>
+<span class="c"># Order matters! Most volatile → least volatile</span>
+date; hostname; uname <span class="v">-a</span>        <span class="c"># system info</span>
+whoami; id; who; w               <span class="c"># current users</span>
+ps <span class="v">aux</span>                          <span class="c"># running processes</span>
+ss <span class="v">-tulpn</span>                       <span class="c"># network connections</span>
+netstat <span class="v">-tulpn</span>                  <span class="c"># listening ports</span>
+ip addr; ip route                <span class="c"># network config</span>
+arp <span class="v">-a</span>                          <span class="c"># ARP cache</span>
+cat /etc/hosts                   <span class="c"># hosts file tampering?</span>
+cat /etc/crontab                 <span class="c"># persistence via cron?</span>
+find / <span class="v">-perm -u=s -type f</span> 2>/dev/null  <span class="c"># SUID files</span>
+last; lastlog                    <span class="c"># login history</span>
+cat ~/.bash_history              <span class="c"># command history</span>
+
+<span class="c"># ── COLLECT IOCs ──────────────────────────────</span>
+<span class="c"># File hashes (for threat intel lookup)</span>
+find / <span class="v">-mtime -1 -type f</span> 2>/dev/null | \
+  xargs sha256sum 2>/dev/null    <span class="c"># recently changed files</span>
+
+<span class="c"># Suspicious connections</span>
+ss <span class="v">-tn</span> state established | grep <span class="v">-v</span> <span class="s">"127.0.0.1\|::1"</span>
+
+<span class="c"># ── CONTAINMENT ───────────────────────────────</span>
+<span class="c"># Block IP at firewall</span>
+iptables <span class="v">-A INPUT -s 1.2.3.4 -j DROP</span>
+iptables <span class="v">-A OUTPUT -d 1.2.3.4 -j DROP</span>
+
+<span class="c"># Kill malicious process</span>
+kill <span class="v">-9</span> &lt;PID&gt;
+
+<span class="c"># Isolate host (keep management access)</span>
+<span class="c"># Route all traffic to null except your IP</span>
+iptables <span class="v">-P INPUT DROP</span>
+iptables <span class="v">-P OUTPUT DROP</span>
+iptables <span class="v">-A INPUT -s YOUR_IP -j ACCEPT</span>
+iptables <span class="v">-A OUTPUT -d YOUR_IP -j ACCEPT</span></pre>
+          </div>
+        </div>
+        <div>
+          <div class="code">
+            <div class="code-bar"><div class="cl"><span class="code-title">Windows live response</span></div><div style="display:flex;gap:6px"><span class="code-lang">PowerShell</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+            <pre><span class="c"># ── VOLATILE DATA COLLECTION ──────────────────</span>
+Get-Date; hostname; [System.Environment]::OSVersion
+Get-Process | Select-Object Name, PID, CPU, WS
+Get-NetTCPConnection -State Established
+Get-NetTCPConnection -State Listen
+Get-ScheduledTask | Where-Object State -eq <span class="s">'Ready'</span>
+Get-Service | Where-Object Status -eq <span class="s">'Running'</span>
+Get-LocalUser
+Get-LocalGroupMember <span class="v">-Group</span> <span class="s">"Administrators"</span>
+
+<span class="c"># ── RECENTLY MODIFIED FILES ────────────────────</span>
+Get-ChildItem <span class="v">-Path C:\ -Recurse -ErrorAction SilentlyContinue</span> |
+  Where-Object LastWriteTime <span class="v">-gt</span> (Get-Date).AddHours(<span class="v">-24</span>) |
+  Select-Object FullName, LastWriteTime | Sort LastWriteTime
+
+<span class="c"># ── SUSPICIOUS PROCESSES ─────────────────────</span>
+Get-WmiObject Win32_Process |
+  Select-Object Name, ProcessId, ParentProcessId,
+    CommandLine, @{N=<span class="s">"Parent"</span>; E={
+      (Get-Process -Id $_.ParentProcessId -EA 0).Name}} |
+  Where-Object CommandLine <span class="v">-match</span> <span class="s">"encode|bypass|hidden|nop"</span>
+
+<span class="c"># ── PERSISTENCE LOCATIONS ────────────────────</span>
+Get-ItemProperty <span class="s">"HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"</span>
+Get-ItemProperty <span class="s">"HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"</span>
+Get-ScheduledTask | Where State <span class="v">-ne</span> <span class="s">'Disabled'</span> |
+  Select TaskName, TaskPath, LastRunTime
+
+<span class="c"># ── CONTAINMENT ──────────────────────────────</span>
+<span class="c"># Block IP via Windows Firewall</span>
+New-NetFirewallRule <span class="v">-Name</span> <span class="s">"BLOCK_MALICIOUS"</span> <span class="v">-Direction</span> Outbound <span class="v">-RemoteAddress</span> <span class="s">"1.2.3.4"</span> <span class="v">-Action</span> Block
+<span class="c"># Kill process</span>
+Stop-Process <span class="v">-Id</span> &lt;PID&gt; <span class="v">-Force</span>
+<span class="c"># Disable user account</span>
+Disable-LocalUser <span class="v">-Name</span> <span class="s">"suspicious_user"</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════
+     S6 · THREAT INTELLIGENCE
+═══════════════════════════════════════════════════ -->
+<section class="section" id="s6">
+  <div class="sec-kicker"><div class="sec-num">06</div><div class="sec-badge">intelligence</div></div>
+  <div class="sec-title">Threat Intelligence</div>
+  <p class="sec-desc">Actionable knowledge about adversaries — their tools, tactics, infrastructure, and motivations — used to enrich alerts and drive proactive defense.</p>
+
+  <div class="g2">
+    <div>
+      <div class="mini">
+        <h4>IOC Types (Indicators of Compromise)</h4>
+        <table class="dt" style="margin-top:8px">
+          <tr><th>IOC Type</th><th>Examples</th><th>Where to Find</th></tr>
+          <tr><td><strong>IP Addresses</strong></td><td>C2 server IPs, scanner IPs</td><td>Firewall logs, SIEM</td></tr>
+          <tr><td><strong>Domains</strong></td><td>malware.evil.com, C2 domains</td><td>DNS logs, proxy logs</td></tr>
+          <tr><td><strong>File Hashes</strong></td><td>MD5/SHA256 of malware</td><td>EDR, AV alerts</td></tr>
+          <tr><td><strong>URLs</strong></td><td>Phishing pages, payload URLs</td><td>Web proxy, email gateway</td></tr>
+          <tr><td><strong>Email</strong></td><td>Sender addresses, subjects</td><td>Email security gateway</td></tr>
+          <tr><td><strong>Mutex/Registry</strong></td><td>Malware artifacts on host</td><td>EDR, memory forensics</td></tr>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="code">
+        <div class="code-bar"><div class="cl"><span class="code-title">IOC lookup tools & automation</span></div><div style="display:flex;gap:6px"><span class="code-lang">bash/python</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># ── VIRUSTOTAL API ────────────────────────────</span>
+<span class="k">import</span> requests
+
+VT_API = <span class="s">"YOUR_API_KEY"</span>
+
+<span class="k">def</span> <span class="f">check_hash</span>(file_hash):
+    url = <span class="s">f"https://www.virustotal.com/api/v3/files/{file_hash}"</span>
+    headers = {<span class="s">"x-apikey"</span>: VT_API}
+    r = requests.get(url, headers=headers)
+    data = r.json()
+    stats = data[<span class="s">"data"</span>][<span class="s">"attributes"</span>][<span class="s">"last_analysis_stats"</span>]
+    <span class="k">return</span> stats
+
+<span class="k">def</span> <span class="f">check_ip</span>(ip):
+    url = <span class="s">f"https://www.virustotal.com/api/v3/ip_addresses/{ip}"</span>
+    headers = {<span class="s">"x-apikey"</span>: VT_API}
+    r = requests.get(url, headers=headers)
+    <span class="k">return</span> r.json()[<span class="s">"data"</span>][<span class="s">"attributes"</span>]
+
+<span class="c"># ── MISP (Threat Intel Platform) CLI ──────────</span>
+misp-feed-sync <span class="v">--update</span>       <span class="c"># update feeds</span>
+pymisp-cli search <span class="v">--value</span> 1.2.3.4  <span class="c"># search IOCs</span>
+
+<span class="c"># ── BULK IOC LOOKUP ───────────────────────────</span>
+<span class="c"># Check list of IPs against AbuseIPDB</span>
+<span class="k">while</span> IFS= read <span class="v">-r</span> ip; <span class="k">do</span>
+  score=$(curl <span class="v">-sG</span> https://api.abuseipdb.com/api/v2/check \
+    <span class="v">-d abuseConfidenceScore&d ipAddress=$ip</span> \
+    <span class="v">-H "Key: YOUR_KEY" -H "Accept: application/json"</span> | \
+    jq <span class="s">'.data.abuseConfidenceScore'</span>)
+  echo <span class="s">"$ip: $score%"</span>
+<span class="k">done</span> < suspicious_ips.txt</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="note nb" style="margin-top:16px">
+    <div class="note-lbl">Threat Intel Platforms</div>
+    <strong>VirusTotal</strong> — file/URL/IP/domain scanning. <strong>Shodan</strong> — internet-exposed asset info. <strong>AbuseIPDB</strong> — IP reputation. <strong>URLScan.io</strong> — sandbox URL analysis. <strong>Any.run</strong> — interactive malware sandbox. <strong>MISP</strong> — share IOCs with community. <strong>OpenCTI</strong> — full CTI platform. All free tiers available.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════
+     S7 · THREAT HUNTING
+═══════════════════════════════════════════════════ -->
+<section class="section" id="s7">
+  <div class="sec-kicker"><div class="sec-num">07</div><div class="sec-badge">proactive</div></div>
+  <div class="sec-title">Threat Hunting</div>
+  <p class="sec-desc">Proactively searching for hidden threats that have bypassed automated detection. Hypothesis-driven investigation using known attacker TTPs and behavioral analytics.</p>
+
+  <div class="diagram"><span class="dh">THREAT HUNTING PROCESS</span>
+
+<span class="db">1. HYPOTHESIS</span>
+  <span class="dd">"Attackers using living-off-the-land binaries to avoid AV detection"</span>
+  <span class="dd">"Attacker has established persistence via scheduled tasks"</span>
+  <span class="dd">"There is lateral movement occurring via WMI"</span>
+
+        ↓
+<span class="db">2. DATA COLLECTION</span>
+  <span class="dd">Which logs cover this hypothesis? (Process creation? Network? Auth?)</span>
+
+        ↓
+<span class="db">3. HUNT EXECUTION</span>
+  <span class="dd">Write SIEM query / hunt in EDR / analyze raw logs</span>
+
+        ↓
+<span class="db">4. ANALYZE RESULTS</span>
+  <span class="dg">No findings → Improve detection coverage</span>
+  <span class="dr">Findings    → Escalate to IR → Create detection rule</span>
+
+        ↓
+<span class="db">5. FEEDBACK LOOP</span>
+  <span class="dd">Update detection rules · Document TTPs found · Share IOCs</span></div>
+
+  <div class="code">
+    <div class="code-bar"><div class="cl"><span class="code-title">Threat hunting queries — common hypotheses</span></div><div style="display:flex;gap:6px"><span class="code-lang">SPL / bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+    <pre><span class="c">| ═══ HYPOTHESIS: Living-Off-The-Land (LOLBins) usage ═══════════════════</span>
+<span class="c">| Attackers use built-in tools to avoid detection</span>
+index=<span class="v">windows</span> EventCode=<span class="v">4688</span>
+| <span class="k">where</span> match(New_Process_Name,
+  <span class="s">"(?i)certutil|mshta|regsvr32|wscript|cscript|bitsadmin|msiexec|rundll32|installutil|regasm|msbuild"</span>)
+| <span class="k">table</span> _time, host, Account_Name, New_Process_Name, Process_Command_Line
+| <span class="k">where</span> len(Process_Command_Line) > <span class="v">200</span>  <span class="c">| ← long cmdlines = encoded payloads</span>
+
+<span class="c">| ═══ HYPOTHESIS: PowerShell Encoded Commands ════════════════════════════</span>
+index=<span class="v">windows</span> EventCode=<span class="v">4688</span> New_Process_Name=<span class="s">"*powershell*"</span>
+| <span class="k">where</span> match(Process_Command_Line, <span class="s">"(?i)encodedcommand|enc |hidden|bypass|noprofile|noninteractive"</span>)
+| <span class="k">rex</span> field=Process_Command_Line <span class="s">"(?i)-enc(?:odedcommand)?\s+(?P<b64_payload>[A-Za-z0-9+/=]+)"</span>
+| <span class="k">eval</span> decoded_payload=base64decode(b64_payload)
+| <span class="k">table</span> _time, host, Account_Name, decoded_payload
+
+<span class="c">| ═══ HYPOTHESIS: Scheduled Task Persistence ════════════════════════════</span>
+index=<span class="v">windows</span> EventCode=<span class="v">4698</span>
+| <span class="k">rex</span> field=Message <span class="s">"Task Name:\s+(?P<task_name>[^\n]+)"</span>
+| <span class="k">rex</span> field=Message <span class="s">"Task Content:\s+(?P<task_content>.+)"</span>
+| <span class="k">where</span> match(task_content, <span class="s">"(?i)powershell|cmd|wscript|http|temp|appdata"</span>)
+| <span class="k">table</span> _time, host, Account_Name, task_name, task_content
+
+<span class="c">| ═══ HYPOTHESIS: Kerberoasting ══════════════════════════════════════════</span>
+<span class="c">| Look for TGS requests for multiple service accounts</span>
+index=<span class="v">windows</span> EventCode=<span class="v">4769</span> Failure_Code=<span class="s">"0x0"</span> Ticket_Encryption_Type=<span class="s">"0x17"</span>
+| <span class="k">stats</span> count, dc(Service_Name) <span class="k">as</span> unique_services <span class="k">by</span> Account_Name, Client_Address
+| <span class="k">where</span> unique_services > <span class="v">3</span>
+| <span class="k">sort</span> -unique_services
+
+<span class="c"># ═══ HYPOTHESIS: Beaconing via bash ═════════════════════════════════════</span>
+<span class="c"># Look for regular outbound connections at fixed intervals</span>
+<span class="f">tshark</span> <span class="v">-r</span> capture.pcap <span class="v">-Y</span> <span class="s">"tcp && ip.dst != 192.168.0.0/16"</span> \
+  <span class="v">-T fields -e ip.src -e ip.dst -e frame.time_relative</span> | \
+  <span class="f">awk</span> <span class="s">'{print $2, $3}'</span> | <span class="f">sort</span> | <span class="f">uniq -c</span> | <span class="f">sort -rn</span> | <span class="f">head</span></pre>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════
+     S8 · EDR & ENDPOINT DEFENSE
+═══════════════════════════════════════════════════ -->
+<section class="section" id="s8">
+  <div class="sec-kicker"><div class="sec-num">08</div><div class="sec-badge">endpoint</div></div>
+  <div class="sec-title">EDR & Endpoint Defense</div>
+  <p class="sec-desc">Endpoint Detection and Response platforms provide deep visibility into host activity, behavioral detection, and rapid response capabilities.</p>
+
+  <div class="g2">
+    <div>
+      <div class="mini">
+        <h4>EDR Capabilities</h4>
+        <ul>
+          <li><strong>Process tree visibility</strong> — see parent→child relationships</li>
+          <li><strong>File system monitoring</strong> — what files are created/modified/deleted</li>
+          <li><strong>Registry monitoring</strong> — persistence mechanism detection</li>
+          <li><strong>Network connections</strong> — per-process outbound connections</li>
+          <li><strong>Memory scanning</strong> — detect injected code, shellcode</li>
+          <li><strong>Behavioral detection</strong> — pattern-based (no sig required)</li>
+          <li><strong>Remote isolation</strong> — cut off infected host instantly</li>
+          <li><strong>Response actions</strong> — kill process, delete file, collect memory</li>
+        </ul>
+      </div>
+
+      <div class="mini" style="margin-top:14px">
+        <h4>Wazuh — Open Source SIEM/EDR</h4>
+        <p>Free, enterprise-grade EDR+SIEM. Runs on Linux/Windows/Mac.</p>
+        <div class="code" style="margin-top:8px">
+          <div class="code-bar"><div class="cl"><span class="code-title">Wazuh setup</span></div><div style="display:flex;gap:6px"><span class="code-lang">bash</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+          <pre style="font-size:11px"><span class="c"># Install Wazuh manager (Ubuntu)</span>
+curl <span class="v">-sO</span> https://packages.wazuh.com/4.x/wazuh-install.sh
+bash wazuh-install.sh <span class="v">-a</span>
+
+<span class="c"># Check Wazuh alerts</span>
+cat /var/ossec/logs/alerts/alerts.json | jq .
+
+<span class="c"># Search for critical alerts</span>
+grep <span class="s">"level.*1[2-5]"</span> /var/ossec/logs/alerts/alerts.log</pre>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="code">
+        <div class="code-bar"><div class="cl"><span class="code-title">Endpoint hardening — Windows</span></div><div style="display:flex;gap:6px"><span class="code-lang">PowerShell</span><button class="copy-btn" onclick="cp(this)">copy</button></div></div>
+        <pre><span class="c"># ── ENABLE ENHANCED LOGGING ───────────────────</span>
+<span class="c"># Enable PowerShell Script Block Logging</span>
+Set-ItemProperty <span class="v">-Path</span> <span class="s">"HKLM:\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging"</span> <span class="v">-Name</span> <span class="s">"EnableScriptBlockLogging"</span> <span class="v">-Value</span> <span class="v">1</span>
+
+<span class="c"># Enable Process Creation Auditing (Event 4688 + cmdline)</span>
+auditpol /set /subcategory:<span class="s">"Process Creation"</span> /success:enable /failure:enable
+
+<span class="c"># Enable Command Line in 4688</span>
+Set-ItemProperty <span class="v">-Path</span> <span class="s">"HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Audit"</span> <span class="v">-Name</span> <span class="s">"ProcessCreationIncludeCmdLine_Enabled"</span> <span class="v">-Value</span> <span class="v">1</span>
+
+<span class="c"># ── WINDOWS DEFENDER / AMSI ───────────────────</span>
+<span class="c"># Check Defender status</span>
+Get-MpComputerStatus | Select AntivirusEnabled, RealTimeProtectionEnabled
+
+<span class="c"># Enable all protections</span>
+Set-MpPreference <span class="v">-DisableRealtimeMonitoring</span> $false
+Set-MpPreference <span class="v">-EnableNetworkProtection</span> Enabled
+
+<span class="c"># ── ATTACK SURFACE REDUCTION (ASR) ────────────</span>
+<span class="c"># Block Office macros from creating processes</span>
+Set-MpPreference <span class="v">-AttackSurfaceReductionRules_Ids</span> D4F940AB-401B-4EFC-AADC-AD5F3C50688A <span class="v">-AttackSurfaceReductionRules_Actions</span> Enabled
+
+<span class="c"># ── SYSMON — Deep endpoint visibility ─────────</span>
+<span class="c"># Download SwiftOnSecurity's Sysmon config</span>
+sysmon64 <span class="v">-accepteula -i</span> sysmonconfig.xml
+<span class="c"># Key Sysmon Event IDs:</span>
+<span class="c"># 1: Process creation (with hashes!)</span>
+<span class="c"># 3: Network connection</span>
+<span class="c"># 8: Remote thread injection</span>
+<span class="c"># 11: File created</span>
+<span class="c"># 13: Registry value set</span>
+<span class="c"># 22: DNS query</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════
+     S9 · MITRE ATT&CK
+═══════════════════════════════════════════════════ -->
+<section class="section" id="s9">
+  <div class="sec-kicker"><div class="sec-num">09</div><div class="sec-badge">framework</div></div>
+  <div class="sec-title">MITRE ATT&CK Mapping</div>
+  <p class="sec-desc">The industry-standard framework for describing adversary behavior. Maps attacker Tactics → Techniques → Procedures to help defenders detect, respond, and improve coverage.</p>
+
+  <div class="diagram"><span class="dh">MITRE ATT&CK TACTICS — Enterprise (left→right = kill chain)</span>
+
+<span class="db">TA0043</span>  <span class="db">TA0042</span>  <span class="db">TA0001</span>  <span class="db">TA0002</span>  <span class="db">TA0003</span>  <span class="db">TA0004</span>  <span class="db">TA0005</span>  <span class="db">TA0006</span>  <span class="db">TA0007</span>  <span class="db">TA0008</span>  <span class="db">TA0009</span>  <span class="db">TA0011</span>  <span class="db">TA0010</span>  <span class="db">TA0040</span>
+Recon   Resrc   Initial  Exec    Persist  PrivEsc  Defense  Cred    Discov  Lateral Collect  C2      Exfil   Impact
+        Dev     Access           ment     ation    Evasion  Access  ery     Move
+
+<span class="dd">Each tactic contains multiple techniques, and each technique has sub-techniques</span>
+<span class="dd">Example: T1059 - Command and Scripting Interpreter</span>
+<span class="dd">  → T1059.001 - PowerShell</span>
+<span class="dd">  → T1059.003 - Windows Command Shell</span>
+<span class="dd">  → T1059.004 - Unix Shell</span></div>
+
+  <div class="card always">
+    <div class="card-hd"><h3>Key ATT&CK Techniques — Detection & Response</h3><div class="card-tags"><span class="ct ct-b">ATT&CK</span><span class="ct ct-g">Detection</span></div></div>
+    <div class="card-bd">
+      <table class="dt">
+        <tr><th>Technique</th><th>ID</th><th>How to Detect</th><th>Response</th></tr>
+        <tr>
+          <td><strong>Spearphishing Attachment</strong></td>
+          <td class="mc">T1566.001</td>
+          <td>Email gateway alerts, suspicious attachment types, macro execution</td>
+          <td>Block attachment, quarantine email, check for execution</td>
+        </tr>
+        <tr>
+          <td><strong>PowerShell Execution</strong></td>
+          <td class="mc">T1059.001</td>
+          <td>Event 4688, ScriptBlock logging (4104), encoded commands</td>
+          <td>Investigate cmdline, check parent process, block if malicious</td>
+        </tr>
+        <tr>
+          <td><strong>Scheduled Task Persistence</strong></td>
+          <td class="mc">T1053.005</td>
+          <td>Event 4698 (task created), anomalous task names/paths</td>
+          <td>Delete task, find and remove malware, check for other persistence</td>
+        </tr>
+        <tr>
+          <td><strong>Pass-the-Hash</strong></td>
+          <td class="mc">T1550.002</td>
+          <td>Event 4624 Logon Type 3, NTLM auth (4776) from anomalous host</td>
+          <td>Reset passwords, investigate source host, check for lateral movement</td>
+        </tr>
+        <tr>
+          <td><strong>OS Credential Dumping (LSASS)</strong></td>
+          <td class="mc">T1003.001</td>
+          <td>Sysmon Event 10 (process access to lsass.exe), Mimikatz signatures</td>
+          <td>Isolate host, force password resets, investigate what was accessed</td>
+        </tr>
+        <tr>
+          <td><strong>Data Exfiltration via C2</strong></td>
+          <td class="mc">T1041</td>
+          <td>Large outbound transfers, unusual destination IPs, DNS queries</td>
+          <td>Block C2 IP, isolate host, determine what data was sent</td>
+        </tr>
+        <tr>
+          <td><strong>Inhibit System Recovery</strong></td>
+          <td class="mc">T1490</td>
+          <td>vssadmin delete shadows, bcdedit, wbadmin commands (Event 4688)</td>
+          <td>RANSOMWARE ACTIVE — isolate immediately, activate IR plan</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="note nr">
+    <div class="note-lbl">Sigma Rules — ATT&CK Detection</div>
+    Sigma is a generic YAML rule format for writing detection logic that converts to any SIEM (Splunk, ELK, QRadar). Example: <span class="mi">sigmac -t splunk -r rules/windows/process_creation/proc_creation_win_powershell_encoded_cmd.yml</span>. The Sigma repository has 2000+ community detection rules aligned to ATT&CK techniques.
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════
+     S10 · QUICK REFERENCE
+═══════════════════════════════════════════════════ -->
+<section class="section" id="s10">
+  <div class="sec-kicker"><div class="sec-num">10</div><div class="sec-badge">reference</div></div>
+  <div class="sec-title">Quick Reference & Cheatsheet</div>
+  <p class="sec-desc">Everything the SOC analyst needs at a glance — triage checklist, common attack patterns, tool commands, and exam preparation.</p>
+
+  <div class="g3">
+    <div class="mini">
+      <h4>Alert Triage Checklist</h4>
+      <ol style="padding-left:16px;margin-top:8px;font-size:12px">
+        <li>Read the alert — what triggered it?</li>
+        <li>Identify the affected asset</li>
+        <li>Check the severity → SLA timer starts</li>
+        <li>Pull relevant logs (±30min window)</li>
+        <li>Correlate with other events</li>
+        <li>Lookup IOCs in threat intel</li>
+        <li>True positive → escalate + open ticket</li>
+        <li>False positive → tune detection rule</li>
+        <li>Document everything in ticket</li>
+        <li>Brief Tier 2 if escalating</li>
+      </ol>
+    </div>
+    <div class="mini">
+      <h4>Common Attack Patterns</h4>
+      <table class="dt" style="margin-top:8px;font-size:11px">
+        <tr><th>Pattern</th><th>Indicators</th></tr>
+        <tr><td>Brute Force</td><td>Many 4625s, same src_ip</td></tr>
+        <tr><td>Pass-the-Hash</td><td>NTLM + Logon Type 3</td></tr>
+        <tr><td>Kerberoasting</td><td>Many 4769 RC4 tickets</td></tr>
+        <tr><td>Beaconing</td><td>Regular interval to same IP</td></tr>
+        <tr><td>Exfil</td><td>Large outbound, DNS TXT</td></tr>
+        <tr><td>Ransomware</td><td>vssadmin + file changes</td></tr>
+        <tr><td>Persistence</td><td>4698, Run key, Services</td></tr>
+      </table>
+    </div>
+    <div class="mini">
+      <h4>Essential Free Tools</h4>
+      <ul style="font-size:12px">
+        <li><strong>Wazuh</strong> — SIEM + EDR (open source)</li>
+        <li><strong>ELK Stack</strong> — log aggregation</li>
+        <li><strong>Zeek</strong> — network analysis</li>
+        <li><strong>Suricata</strong> — IDS/IPS</li>
+        <li><strong>Sysmon</strong> — Windows telemetry</li>
+        <li><strong>TheHive</strong> — IR case management</li>
+        <li><strong>MISP</strong> — threat intel sharing</li>
+        <li><strong>Velociraptor</strong> — DFIR + hunting</li>
+        <li><strong>CyberChef</strong> — decode/analyze data</li>
+        <li><strong>VirusTotal</strong> — IOC lookup</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Exam checklist -->
+  <div style="margin-top:28px;background:var(--panel);border:1px solid var(--border2);padding:28px 32px;position:relative">
+    <div style="position:absolute;top:-1px;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--blue2),var(--cyan),transparent)"></div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--cyan);letter-spacing:.20em;text-transform:uppercase;margin-bottom:18px">// cySA+ / BTL1 / SOC-L2 — readiness_check</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="font-family:var(--body);font-size:13px;color:var(--text2);line-height:2.1;font-weight:300">
+        ☐ Identify and analyze Windows Security Event IDs<br>
+        ☐ Write a Splunk SPL query to detect brute force<br>
+        ☐ Set up ELK stack and ingest syslog<br>
+        ☐ Perform a complete incident response cycle<br>
+        ☐ Conduct a threat hunt using ATT&CK hypothesis<br>
+        ☐ Create a Sigma rule for a custom detection
+      </div>
+      <div style="font-family:var(--body);font-size:13px;color:var(--text2);line-height:2.1;font-weight:300">
+        ☐ Analyze a pcap for malicious traffic patterns<br>
+        ☐ Write a Suricata rule to detect a specific attack<br>
+        ☐ Lookup IOCs using VirusTotal API in Python<br>
+        ☐ Map a real incident to MITRE ATT&CK framework<br>
+        ☐ Configure Sysmon for enhanced Windows telemetry<br>
+        ☐ Produce a professional incident report
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+// Clock
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getUTCHours()).padStart(2,'0');
+  const m = String(now.getUTCMinutes()).padStart(2,'0');
+  const s = String(now.getUTCSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = `${h}:${m}:${s} UTC`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Sidebar navigation
+function go(id, el) {
+  document.getElementById(id)?.scrollIntoView({behavior:'smooth', block:'start'});
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  if(el) el.classList.add('active');
+}
+
+// Card toggles
+function tog(id) { document.getElementById(id)?.classList.toggle('open'); }
+
+// Active section tracking
+const secs = document.querySelectorAll('section[id]');
+const items = document.querySelectorAll('.sb-item');
+secs.forEach(s => {
+  new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if(e.isIntersecting) {
+        const i = [...secs].indexOf(e.target);
+        items.forEach(it => it.classList.remove('active'));
+        if(items[i]) items[i].classList.add('active');
+      }
+    });
+  }, {threshold: 0.2}).observe(s);
+});
+
+// Copy buttons
+function cp(btn) {
+  const pre = btn.closest('.code')?.querySelector('pre');
+  if(!pre) return;
+  navigator.clipboard.writeText(pre.textContent.trim()).then(() => {
+    const o = btn.textContent;
+    btn.textContent = 'copied!'; btn.style.color = 'var(--green)';
+    setTimeout(() => { btn.textContent = o; btn.style.color = ''; }, 2000);
+  });
+}
+</script>
+</body>
+</html>

@@ -6,141 +6,471 @@
     <title>Cyber Security</title>
     <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" media="(prefers-color-scheme: light)" />
     <link rel="icon" href="/assets/logo-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
     <style>
+      @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700&display=swap");
+
       :root {
-        --bg: #0f1a24;
-        --panel: #162634;
-        --accent: #f1c40f;
-        --text: #e6eef5;
-        --muted: #9fb3c8;
+        --gold: #d4a843;
+        --gold-dim: #8a6a28;
+        --bg-card: rgba(255, 255, 255, 0.04);
+        --bg-card-hover: rgba(255, 255, 255, 0.08);
+        --border: rgba(255, 255, 255, 0.08);
+        --border-hover: rgba(212, 168, 67, 0.5);
+        --text-dim: #8a8a8a;
+        --text-muted: #5a5a5a;
       }
 
       * {
         box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
 
       body {
-        margin: 0;
-        font-family: "Times New Roman", Times, serif;
-        background: radial-gradient(circle at top, #1b2f40 0%, var(--bg) 55%);
-        color: var(--text);
+        background: #0d1117;
         min-height: 100vh;
+        font-family: "JetBrains Mono", monospace;
+      }
+
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+      }
+
+      .shell {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 2.5rem 1.5rem;
+      }
+
+      .header {
+        margin-bottom: 2.5rem;
+        animation: fadeDown 0.6s ease both;
+      }
+
+      .prompt-line {
         display: flex;
         align-items: center;
-        justify-content: center;
-        padding: 24px;
-      }
-
-      main {
-        width: min(720px, 100%);
-        background: var(--panel);
-        border: 1px solid #22384b;
-        border-radius: 14px;
-        padding: 28px;
-        box-shadow: 0 24px 40px rgba(0, 0, 0, 0.35);
-      }
-
-      h1 {
-        margin: 0 0 12px;
-        font-size: 2.2rem;
-        letter-spacing: 0.04em;
-      }
-
-      p {
-        margin: 0 0 18px;
-        color: var(--muted);
-      }
-
-      ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: grid;
         gap: 10px;
+        margin-bottom: 0.5rem;
       }
 
-      a {
-        display: block;
-        text-decoration: none;
-        color: var(--text);
-        background: #1b3244;
-        border: 1px solid #28425a;
-        padding: 12px 14px;
-        border-radius: 10px;
-        transition: transform 120ms ease, border-color 120ms ease;
+      .prompt-sym {
+        color: var(--gold);
+        font-size: 13px;
+        font-family: "JetBrains Mono", monospace;
       }
 
-      a:hover {
-        transform: translateY(-2px);
-        border-color: var(--accent);
-      }
-
-      .route {
-        display: block;
+      .title {
+        font-family: "Syne", sans-serif;
+        font-size: 2rem;
         font-weight: 700;
-        letter-spacing: 0.02em;
+        color: #fff;
+        letter-spacing: -0.02em;
       }
 
-      .desc {
+      .title span {
+        color: var(--gold);
+      }
+
+      .subtitle {
+        font-size: 12px;
+        color: var(--text-dim);
+        font-family: "JetBrains Mono", monospace;
+        margin-top: 0.4rem;
+        padding-left: 1px;
+      }
+
+      .cursor {
+        display: inline-block;
+        width: 9px;
+        height: 16px;
+        background: var(--gold);
+        margin-left: 4px;
+        animation: blink 1.2s step-end infinite;
+        vertical-align: -3px;
+      }
+
+      .search-bar {
+        position: relative;
+        margin-bottom: 1.5rem;
+        animation: fadeDown 0.6s 0.1s ease both;
+        opacity: 0;
+      }
+
+      .search-bar input {
+        width: 100%;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 16px 10px 42px;
+        color: #fff;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        outline: none;
+        transition: border 0.2s, background 0.2s;
+      }
+
+      .search-bar input::placeholder {
+        color: var(--text-muted);
+      }
+
+      .search-bar input:focus {
+        border-color: var(--gold-dim);
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-dim);
+        font-size: 15px;
+      }
+
+      .count {
+        font-size: 11px;
+        color: var(--text-dim);
+        margin-bottom: 1rem;
+        font-family: "JetBrains Mono", monospace;
+        animation: fadeDown 0.6s 0.15s ease both;
+        opacity: 0;
+      }
+
+      .count span {
+        color: var(--gold);
+      }
+
+      .grid {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1.1rem 1.25rem;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s, transform 0.15s;
+        position: relative;
+        overflow: hidden;
+        opacity: 0;
+        animation: slideIn 0.5s ease both;
+        text-decoration: none;
         display: block;
-        margin-top: 4px;
-        color: var(--muted);
-        font-size: 0.95rem;
       }
 
-      .accent {
-        color: var(--accent);
+      .card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 3px;
+        background: var(--gold);
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+
+      .card:hover {
+        background: var(--bg-card-hover);
+        border-color: var(--border-hover);
+        transform: translateX(4px);
+      }
+
+      .card:hover::before {
+        opacity: 1;
+      }
+
+      .card:focus {
+        outline: none;
+        border-color: var(--gold);
+        box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.15);
+      }
+
+      .card-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.3rem;
+      }
+
+      .card-path {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--gold);
+      }
+
+      .tag {
+        font-size: 10px;
+        font-family: "JetBrains Mono", monospace;
+        padding: 3px 8px;
+        border-radius: 4px;
+        border: 1px solid;
+        opacity: 0.75;
+      }
+
+      .card-desc {
+        font-size: 12.5px;
+        color: var(--text-dim);
+        line-height: 1.5;
+      }
+
+      .card-desc em {
+        color: #ccc;
+        font-style: normal;
+      }
+
+      .arrow {
+        font-size: 14px;
+        color: var(--text-muted);
+        transition: color 0.2s, transform 0.2s;
+        display: inline-block;
+      }
+
+      .card:hover .arrow {
+        color: var(--gold);
+        transform: translateX(3px);
+      }
+
+      .no-results {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-dim);
+        font-size: 13px;
+        display: none;
+      }
+
+      .no-results i {
+        display: block;
+        font-size: 28px;
+        margin-bottom: 0.75rem;
+        color: var(--text-muted);
+      }
+
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0;
+        }
+      }
+
+      @keyframes fadeDown {
+        from {
+          opacity: 0;
+          transform: translateY(-12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+
+      .tag-crypto {
+        color: #a78bfa;
+        border-color: #a78bfa40;
+        background: rgba(167, 139, 250, 0.08);
+      }
+
+      .tag-ops {
+        color: #34d399;
+        border-color: #34d39940;
+        background: rgba(52, 211, 153, 0.08);
+      }
+
+      .tag-linux {
+        color: #60a5fa;
+        border-color: #60a5fa40;
+        background: rgba(96, 165, 250, 0.08);
+      }
+
+      .tag-net {
+        color: #fb923c;
+        border-color: #fb923c40;
+        background: rgba(251, 146, 60, 0.08);
+      }
+
+      .tag-web {
+        color: #f472b6;
+        border-color: #f472b640;
+        background: rgba(244, 114, 182, 0.08);
+      }
+
+      .tag-pentest {
+        color: #f87171;
+        border-color: #f8717140;
+        background: rgba(248, 113, 113, 0.08);
+      }
+
+      .tag-blue {
+        color: #38bdf8;
+        border-color: #38bdf840;
+        background: rgba(56, 189, 248, 0.08);
       }
     </style>
   </head>
   <body>
-    <main>
-      <h1><span class="accent">Cyber Security</span> Notes</h1>
-      <p>Quick links to every file in this folder.</p>
-      <ul>
-        <li>
-          <a href="/cryptography/">
-            <span class="route">/cryptography/</span>
-            <span class="desc">Cryptography foundations and reference notes.</span>
-          </a>
-        </li>
-        <li>
-          <a href="/90-day-plan/">
-            <span class="route">/90-day-plan/</span>
-            <span class="desc">A structured 90-day learning plan.</span>
-          </a>
-        </li>
-        <li>
-          <a href="/linux-bash/">
-            <span class="route">/linux-bash/</span>
-            <span class="desc">Linux and Bash commands for security work.</span>
-          </a>
-        </li>
-        <li>
-          <a href="/networking-fundamentals/">
-            <span class="route">/networking-fundamentals/</span>
-            <span class="desc">Core networking concepts and protocols.</span>
-          </a>
-        </li>
-        <li>
-          <a href="/web-security-owasp/">
-            <span class="route">/web-security-owasp/</span>
-            <span class="desc">OWASP-aligned web security notes.</span>
-          </a>
-        </li>
-        <li>
-          <a href="/Penetration_testing/">
-            <span class="route">/Penetration_testing/</span>
-            <span class="desc">Penetration testing field manual and playbook.</span>
-          </a>
-        </li>
-        <li>
-          <a href="/blue_team_SOC/">
-            <span class="route">/blue_team_SOC/</span>
-            <span class="desc">Blue team operations and SOC handbook.</span>
-          </a>
-        </li>
-      </ul>
-    </main>
+    <h2 class="sr-only">Cyber Security Notes - folder index with search</h2>
+    <div class="shell">
+      <div class="header">
+        <div class="prompt-line">
+          <span class="prompt-sym">~/notes $</span>
+          <span style="font-size: 13px; color: var(--text-dim);">ls -la</span>
+          <span class="cursor"></span>
+        </div>
+        <h1 class="title"><span>Cyber Security</span> Notes</h1>
+        <p class="subtitle">Quick links to every file in this folder.</p>
+      </div>
+
+      <div class="search-bar">
+        <i class="ti ti-search search-icon" aria-hidden="true"></i>
+        <input type="text" id="search" placeholder="Search folders..." aria-label="Search folders" />
+      </div>
+
+      <p class="count" id="count"><span id="visible-count">7</span> of 7 folders</p>
+
+      <div class="grid" id="grid" role="list">
+        <a class="card" href="/cryptography/" tabindex="0" data-tags="cryptography encryption hash cipher" role="listitem" style="animation-delay: 0.1s;">
+          <div class="card-top">
+            <span class="card-path">/cryptography/</span>
+            <span class="tag tag-crypto">foundations</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span class="card-desc">Cryptography foundations and <em>reference notes</em>.</span>
+            <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
+          </div>
+        </a>
+        <a class="card" href="/90-day-plan/" tabindex="0" data-tags="learning plan roadmap schedule study" role="listitem" style="animation-delay: 0.17s;">
+          <div class="card-top">
+            <span class="card-path">/90-day-plan/</span>
+            <span class="tag tag-ops">planning</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span class="card-desc">A structured <em>90-day learning plan</em>.</span>
+            <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
+          </div>
+        </a>
+        <a class="card" href="/linux-bash/" tabindex="0" data-tags="linux bash shell commands terminal scripting" role="listitem" style="animation-delay: 0.24s;">
+          <div class="card-top">
+            <span class="card-path">/linux-bash/</span>
+            <span class="tag tag-linux">linux</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span class="card-desc">Linux and Bash <em>commands for security work</em>.</span>
+            <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
+          </div>
+        </a>
+        <a class="card" href="/networking-fundamentals/" tabindex="0" data-tags="networking tcp ip protocols dns http" role="listitem" style="animation-delay: 0.31s;">
+          <div class="card-top">
+            <span class="card-path">/networking-fundamentals/</span>
+            <span class="tag tag-net">networking</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span class="card-desc">Core networking <em>concepts and protocols</em>.</span>
+            <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
+          </div>
+        </a>
+        <a class="card" href="/web-security-owasp/" tabindex="0" data-tags="web owasp xss sql injection csrf" role="listitem" style="animation-delay: 0.38s;">
+          <div class="card-top">
+            <span class="card-path">/web-security-owasp/</span>
+            <span class="tag tag-web">owasp</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span class="card-desc">OWASP-aligned <em>web security notes</em>.</span>
+            <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
+          </div>
+        </a>
+        <a class="card" href="/Penetration_testing/" tabindex="0" data-tags="penetration testing pentest exploit recon" role="listitem" style="animation-delay: 0.45s;">
+          <div class="card-top">
+            <span class="card-path">/Penetration_testing/</span>
+            <span class="tag tag-pentest">pentest</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span class="card-desc">Penetration testing <em>field manual and playbook</em>.</span>
+            <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
+          </div>
+        </a>
+        <a class="card" href="/blue_team_SOC/" tabindex="0" data-tags="blue team soc operations defense incident response" role="listitem" style="animation-delay: 0.52s;">
+          <div class="card-top">
+            <span class="card-path">/blue_team_SOC/</span>
+            <span class="tag tag-blue">blue team</span>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span class="card-desc">Blue team operations and <em>SOC handbook</em>.</span>
+            <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
+          </div>
+        </a>
+      </div>
+      <p class="no-results" id="no-results" aria-live="polite">
+        <i class="ti ti-folder-off" aria-hidden="true"></i>
+        No folders match your search.
+      </p>
+    </div>
+
+    <script>
+      const input = document.getElementById("search");
+      const cards = document.querySelectorAll(".card");
+      const visibleCount = document.getElementById("visible-count");
+      const noResults = document.getElementById("no-results");
+
+      input.addEventListener("input", () => {
+        const q = input.value.toLowerCase().trim();
+        let shown = 0;
+        cards.forEach((card) => {
+          const text = (
+            card.querySelector(".card-path").textContent +
+            " " +
+            card.querySelector(".card-desc").textContent +
+            " " +
+            (card.dataset.tags || "")
+          ).toLowerCase();
+          const match = !q || text.includes(q);
+          card.style.display = match ? "block" : "none";
+          if (match) {
+            shown += 1;
+          }
+        });
+        visibleCount.textContent = shown;
+        noResults.style.display = shown === 0 ? "block" : "none";
+      });
+
+      document.querySelectorAll(".card").forEach((card) => {
+        card.addEventListener("click", (event) => {
+          card.style.transform = "scale(0.98)";
+          setTimeout(() => {
+            card.style.transform = "";
+          }, 150);
+        });
+        card.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            card.click();
+          }
+        });
+      });
+    </script>
   </body>
 </html>

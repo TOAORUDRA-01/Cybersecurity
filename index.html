@@ -1,260 +1,631 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Cyber Security</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cyber Security Study Portfolio</title>
     <link rel="icon" href="/assets/logo.svg" type="image/svg+xml" media="(prefers-color-scheme: light)" />
     <link rel="icon" href="/assets/logo-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700&display=swap");
-
-      :root {
-        --gold: #d4a843;
-        --gold-dim: #8a6a28;
-        --bg-card: rgba(255, 255, 255, 0.04);
-        --bg-card-hover: rgba(255, 255, 255, 0.08);
-        --border: rgba(255, 255, 255, 0.08);
-        --border-hover: rgba(212, 168, 67, 0.5);
-        --text-dim: #8a8a8a;
-        --text-muted: #5a5a5a;
-      }
-
-      * {
+      *,
+      *::before,
+      *::after {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
       }
 
+      :root {
+        --gold: #c8a84b;
+        --gold-light: #e8c96a;
+        --dark: #080c10;
+        --dark2: #0d1520;
+        --dark3: #111d2e;
+        --surface: #131f30;
+        --border: rgba(200, 168, 75, 0.18);
+        --text: #d8e4f0;
+        --muted: #4a6070;
+        --green: #2ecc8c;
+        --red: #e05252;
+        --blue: #4a9edb;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
       body {
-        background: #0d1117;
-        min-height: 100vh;
-        font-family: "JetBrains Mono", monospace;
-      }
-
-      .sr-only {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-      }
-
-      .shell {
-        max-width: 720px;
-        margin: 0 auto;
-        padding: 2.5rem 1.5rem;
-      }
-
-      .header {
-        margin-bottom: 2.5rem;
-        animation: fadeDown 0.6s ease both;
-      }
-
-      .prompt-line {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 0.5rem;
-      }
-
-      .prompt-sym {
-        color: var(--gold);
-        font-size: 13px;
-        font-family: "JetBrains Mono", monospace;
-      }
-
-      .title {
-        font-family: "Syne", sans-serif;
-        font-size: 2rem;
-        font-weight: 700;
-        color: #fff;
-        letter-spacing: -0.02em;
-      }
-
-      .title span {
-        color: var(--gold);
-      }
-
-      .subtitle {
-        font-size: 12px;
-        color: var(--text-dim);
-        font-family: "JetBrains Mono", monospace;
-        margin-top: 0.4rem;
-        padding-left: 1px;
+        background: var(--dark);
+        color: var(--text);
+        font-family: "IBM Plex Sans", sans-serif;
+        font-size: 15px;
+        line-height: 1.6;
+        overflow-x: hidden;
+        cursor: none;
       }
 
       .cursor {
-        display: inline-block;
-        width: 9px;
-        height: 16px;
+        width: 12px;
+        height: 12px;
         background: var(--gold);
-        margin-left: 4px;
-        animation: blink 1.2s step-end infinite;
-        vertical-align: -3px;
+        border-radius: 50%;
+        position: fixed;
+        pointer-events: none;
+        z-index: 9999;
+        transform: translate(-50%, -50%);
+        transition: transform 0.08s, width 0.2s, height 0.2s, opacity 0.2s;
+        mix-blend-mode: screen;
       }
 
-      .search-bar {
-        position: relative;
-        margin-bottom: 1.5rem;
-        animation: fadeDown 0.6s 0.1s ease both;
-        opacity: 0;
+      .cursor-ring {
+        width: 36px;
+        height: 36px;
+        border: 1px solid rgba(200, 168, 75, 0.5);
+        border-radius: 50%;
+        position: fixed;
+        pointer-events: none;
+        z-index: 9998;
+        transform: translate(-50%, -50%);
+        transition: transform 0.18s ease-out, width 0.2s, height 0.2s, opacity 0.3s;
       }
 
-      .search-bar input {
-        width: 100%;
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 10px 16px 10px 42px;
-        color: #fff;
-        font-family: "JetBrains Mono", monospace;
-        font-size: 13px;
-        outline: none;
-        transition: border 0.2s, background 0.2s;
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 9997;
+        opacity: 0.4;
       }
 
-      .search-bar input::placeholder {
-        color: var(--text-muted);
-      }
-
-      .search-bar input:focus {
-        border-color: var(--gold-dim);
-        background: rgba(255, 255, 255, 0.06);
-      }
-
-      .search-icon {
-        position: absolute;
-        left: 14px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--text-dim);
-        font-size: 15px;
-      }
-
-      .count {
-        font-size: 11px;
-        color: var(--text-dim);
-        margin-bottom: 1rem;
-        font-family: "JetBrains Mono", monospace;
-        animation: fadeDown 0.6s 0.15s ease both;
-        opacity: 0;
-      }
-
-      .count span {
-        color: var(--gold);
-      }
-
-      .grid {
+      .hero {
+        min-height: 100vh;
         display: flex;
         flex-direction: column;
-        gap: 8px;
-      }
-
-      .card {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 1.1rem 1.25rem;
-        cursor: pointer;
-        transition: background 0.2s, border-color 0.2s, transform 0.15s;
+        justify-content: center;
+        padding: 0 8vw;
         position: relative;
         overflow: hidden;
+      }
+
+      .hero-bg {
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(ellipse 80% 60% at 70% 50%, rgba(200, 168, 75, 0.06) 0%, transparent 70%),
+          radial-gradient(ellipse 50% 80% at 10% 80%, rgba(74, 158, 219, 0.05) 0%, transparent 60%);
+      }
+
+      .hero-grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(200, 168, 75, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(200, 168, 75, 0.04) 1px, transparent 1px);
+        background-size: 60px 60px;
+        animation: gridDrift 20s linear infinite;
+      }
+
+      @keyframes gridDrift {
+        from {
+          transform: translateY(0);
+        }
+        to {
+          transform: translateY(60px);
+        }
+      }
+
+      .hero-tag {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        color: var(--gold);
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        margin-bottom: 1.5rem;
         opacity: 0;
-        animation: slideIn 0.5s ease both;
-        text-decoration: none;
+        animation: fadeUp 0.8s 0.3s ease both;
+      }
+
+      .hero-name {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(5rem, 14vw, 11rem);
+        line-height: 0.88;
+        color: #fff;
+        letter-spacing: 0.02em;
+        margin-bottom: 0.5rem;
+        opacity: 0;
+        animation: fadeUp 0.9s 0.45s ease both;
+      }
+
+      .hero-name em {
+        color: var(--gold);
+        font-style: normal;
         display: block;
       }
 
-      .card::before {
+      .hero-role {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: clamp(0.8rem, 1.4vw, 1rem);
+        color: var(--muted);
+        letter-spacing: 0.08em;
+        margin-top: 1.5rem;
+        margin-bottom: 2.5rem;
+        opacity: 0;
+        animation: fadeUp 0.9s 0.6s ease both;
+      }
+
+      .hero-role span {
+        color: var(--text);
+      }
+
+      .hero-stats {
+        display: flex;
+        gap: 3rem;
+        opacity: 0;
+        animation: fadeUp 0.9s 0.75s ease both;
+      }
+
+      .stat-num {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 2.5rem;
+        color: var(--gold);
+        line-height: 1;
+      }
+
+      .stat-label {
+        font-size: 11px;
+        font-family: "IBM Plex Mono", monospace;
+        color: var(--muted);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-top: 4px;
+      }
+
+      .hero-scroll {
+        position: absolute;
+        bottom: 2.5rem;
+        right: 8vw;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        opacity: 0;
+        animation: fadeIn 1s 1.2s ease both;
+      }
+
+      .scroll-line {
+        width: 1px;
+        height: 60px;
+        background: linear-gradient(to bottom, var(--gold), transparent);
+        animation: scrollPulse 2s ease-in-out infinite;
+      }
+
+      .scroll-text {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 10px;
+        color: var(--muted);
+        letter-spacing: 0.2em;
+        writing-mode: vertical-lr;
+      }
+
+      @keyframes scrollPulse {
+        0%,
+        100% {
+          transform: scaleY(1);
+          opacity: 0.5;
+        }
+        50% {
+          transform: scaleY(1.15);
+          opacity: 1;
+        }
+      }
+
+      section {
+        padding: 8rem 8vw;
+        position: relative;
+      }
+
+      .section-label {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 10px;
+        color: var(--gold);
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        margin-bottom: 0.75rem;
+      }
+
+      .section-title {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(2.5rem, 6vw, 5rem);
+        line-height: 0.92;
+        color: #fff;
+        margin-bottom: 3.5rem;
+      }
+
+      .modules-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5px;
+        background: var(--border);
+        border: 1px solid var(--border);
+      }
+
+      .module-card {
+        background: var(--dark2);
+        padding: 2rem;
+        position: relative;
+        overflow: hidden;
+        transition: background 0.3s;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: background 0.25s, opacity 0.6s ease, transform 0.6s ease;
+      }
+
+      .module-card.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .module-card::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: var(--gold);
+        transition: width 0.4s ease;
+      }
+
+      .module-card:hover {
+        background: var(--dark3);
+      }
+
+      .module-card:hover::after {
+        width: 100%;
+      }
+
+      .module-icon {
+        font-size: 2rem;
+        margin-bottom: 1.2rem;
+        display: block;
+        filter: grayscale(0.3);
+        transition: transform 0.3s, filter 0.3s;
+      }
+
+      .module-card:hover .module-icon {
+        transform: scale(1.1) rotate(-5deg);
+        filter: grayscale(0);
+      }
+
+      .module-name {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 13px;
+        color: var(--gold);
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+      }
+
+      .module-desc {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.6;
+        margin-bottom: 1.25rem;
+      }
+
+      .progress-bar {
+        height: 2px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--gold), var(--gold-light));
+        width: 0;
+        transition: width 1.4s cubic-bezier(0.25, 1, 0.5, 1);
+        border-radius: 2px;
+      }
+
+      .progress-label {
+        display: flex;
+        justify-content: space-between;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 10px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      .timeline {
+        position: relative;
+        padding-left: 2.5rem;
+      }
+
+      .timeline::before {
         content: "";
         position: absolute;
         left: 0;
         top: 0;
-        height: 100%;
-        width: 3px;
-        background: var(--gold);
+        bottom: 0;
+        width: 1px;
+        background: linear-gradient(to bottom, transparent, var(--gold), var(--gold), transparent);
+      }
+
+      .timeline-item {
+        position: relative;
+        margin-bottom: 3rem;
         opacity: 0;
-        transition: opacity 0.2s;
+        transform: translateX(-20px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
       }
 
-      .card:hover {
-        background: var(--bg-card-hover);
-        border-color: var(--border-hover);
-        transform: translateX(4px);
-      }
-
-      .card:hover::before {
+      .timeline-item.visible {
         opacity: 1;
+        transform: translateX(0);
       }
 
-      .card:focus {
-        outline: none;
-        border-color: var(--gold);
-        box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.15);
+      .timeline-dot {
+        position: absolute;
+        left: -2.5rem;
+        top: 4px;
+        width: 10px;
+        height: 10px;
+        border: 1px solid var(--gold);
+        background: var(--dark);
+        border-radius: 50%;
+        transform: translateX(-50%);
+        margin-left: 0.5px;
+        transition: background 0.3s;
       }
 
-      .card-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
+      .timeline-item:hover .timeline-dot {
+        background: var(--gold);
+      }
+
+      .timeline-week {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 10px;
+        color: var(--gold);
+        letter-spacing: 0.2em;
+        margin-bottom: 0.4rem;
+      }
+
+      .timeline-title {
+        font-family: "IBM Plex Sans", sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        color: #fff;
         margin-bottom: 0.3rem;
       }
 
-      .card-path {
-        font-family: "JetBrains Mono", monospace;
+      .timeline-body {
         font-size: 13px;
-        font-weight: 700;
-        color: var(--gold);
+        color: var(--muted);
+        line-height: 1.7;
       }
 
-      .tag {
+      .timeline-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 0.75rem;
+      }
+
+      .chip {
+        font-family: "IBM Plex Mono", monospace;
         font-size: 10px;
-        font-family: "JetBrains Mono", monospace;
-        padding: 3px 8px;
-        border-radius: 4px;
-        border: 1px solid;
-        opacity: 0.75;
-      }
-
-      .card-desc {
-        font-size: 12.5px;
-        color: var(--text-dim);
-        line-height: 1.5;
-      }
-
-      .card-desc em {
-        color: #ccc;
-        font-style: normal;
-      }
-
-      .arrow {
-        font-size: 14px;
-        color: var(--text-muted);
-        transition: color 0.2s, transform 0.2s;
-        display: inline-block;
-      }
-
-      .card:hover .arrow {
+        padding: 3px 10px;
+        border: 1px solid rgba(200, 168, 75, 0.2);
         color: var(--gold);
-        transform: translateX(3px);
+        letter-spacing: 0.08em;
+        border-radius: 2px;
+        background: rgba(200, 168, 75, 0.04);
+        transition: background 0.2s, border-color 0.2s;
       }
 
-      .no-results {
-        text-align: center;
-        padding: 2rem;
-        color: var(--text-dim);
+      .chip:hover {
+        background: rgba(200, 168, 75, 0.1);
+        border-color: rgba(200, 168, 75, 0.5);
+      }
+
+      .tools-flex {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .tool-pill {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        padding: 0.6rem 1.2rem;
+        border-radius: 2px;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 12px;
+        color: var(--text);
+        opacity: 0;
+        transform: scale(0.9);
+        transition: opacity 0.4s ease, transform 0.4s ease, background 0.2s, border-color 0.2s;
+        cursor: default;
+      }
+
+      .tool-pill.visible {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      .tool-pill:hover {
+        background: var(--dark3);
+        border-color: rgba(200, 168, 75, 0.4);
+        color: var(--gold);
+      }
+
+      .tool-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .dot-green {
+        background: var(--green);
+      }
+
+      .dot-blue {
+        background: var(--blue);
+      }
+
+      .dot-red {
+        background: var(--red);
+      }
+
+      .dot-gold {
+        background: var(--gold);
+      }
+
+      .terminal {
+        background: #050a0f;
+        border: 1px solid rgba(200, 168, 75, 0.15);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 2rem;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.7s ease, transform 0.7s ease;
+      }
+
+      .terminal.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .term-bar {
+        background: var(--surface);
+        padding: 0.6rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border-bottom: 1px solid rgba(200, 168, 75, 0.1);
+      }
+
+      .term-dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+      }
+
+      .t-red {
+        background: #e05252;
+      }
+
+      .t-yellow {
+        background: #c8a84b;
+      }
+
+      .t-green {
+        background: #2ecc8c;
+      }
+
+      .term-title {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        color: var(--muted);
+        margin-left: 8px;
+      }
+
+      .term-body {
+        padding: 1.5rem 1.75rem;
+        font-family: "IBM Plex Mono", monospace;
         font-size: 13px;
-        display: none;
+        line-height: 2;
       }
 
-      .no-results i {
-        display: block;
-        font-size: 28px;
-        margin-bottom: 0.75rem;
-        color: var(--text-muted);
+      .term-line {
+        display: flex;
+        gap: 12px;
+      }
+
+      .term-prompt {
+        color: var(--gold);
+        flex-shrink: 0;
+      }
+
+      .term-cmd {
+        color: #fff;
+      }
+
+      .term-out {
+        color: var(--muted);
+        padding-left: 1.5rem;
+      }
+
+      .term-success {
+        color: var(--green);
+      }
+
+      .term-warn {
+        color: var(--red);
+      }
+
+      .type-cursor {
+        display: inline-block;
+        width: 7px;
+        height: 14px;
+        background: var(--gold);
+        vertical-align: -2px;
+        animation: blink 1s step-end infinite;
+      }
+
+      footer {
+        padding: 4rem 8vw;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      .footer-brand {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 1.8rem;
+        color: var(--gold);
+        letter-spacing: 0.05em;
+      }
+
+      .footer-note {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(28px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
       }
 
       @keyframes blink {
@@ -267,209 +638,493 @@
         }
       }
 
-      @keyframes fadeDown {
-        from {
-          opacity: 0;
-          transform: translateY(-12px);
+      nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.25rem 8vw;
+        background: rgba(8, 12, 16, 0.8);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid transparent;
+        transition: border-color 0.4s;
+      }
+
+      nav.scrolled {
+        border-color: var(--border);
+      }
+
+      .nav-logo {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 12px;
+        color: var(--gold);
+        letter-spacing: 0.1em;
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 2.5rem;
+        list-style: none;
+      }
+
+      .nav-links a {
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 11px;
+        color: var(--muted);
+        text-decoration: none;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        transition: color 0.2s;
+        position: relative;
+      }
+
+      .nav-links a::after {
+        content: "";
+        position: absolute;
+        bottom: -4px;
+        left: 0;
+        width: 0;
+        height: 1px;
+        background: var(--gold);
+        transition: width 0.3s;
+      }
+
+      .nav-links a:hover {
+        color: var(--gold-light);
+      }
+
+      .nav-links a:hover::after {
+        width: 100%;
+      }
+
+      .divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--border), transparent);
+        margin: 0 8vw;
+      }
+
+      .badge {
+        display: inline-block;
+        font-family: "IBM Plex Mono", monospace;
+        font-size: 9px;
+        padding: 2px 8px;
+        background: rgba(200, 168, 75, 0.1);
+        border: 1px solid rgba(200, 168, 75, 0.3);
+        color: var(--gold);
+        letter-spacing: 0.15em;
+        border-radius: 2px;
+        margin-left: 10px;
+        vertical-align: 2px;
+      }
+
+      @media (max-width: 960px) {
+        .hero-stats {
+          flex-wrap: wrap;
+          gap: 1.5rem;
         }
-        to {
-          opacity: 1;
-          transform: translateY(0);
+
+        .hero-scroll {
+          display: none;
         }
-      }
 
-      @keyframes slideIn {
-        from {
-          opacity: 0;
-          transform: translateX(-10px);
+        .nav-links {
+          display: none;
         }
-        to {
-          opacity: 1;
-          transform: translateX(0);
+
+        #plan > div {
+          grid-template-columns: 1fr;
+          gap: 2.5rem;
         }
-      }
-
-      .tag-crypto {
-        color: #a78bfa;
-        border-color: #a78bfa40;
-        background: rgba(167, 139, 250, 0.08);
-      }
-
-      .tag-ops {
-        color: #34d399;
-        border-color: #34d39940;
-        background: rgba(52, 211, 153, 0.08);
-      }
-
-      .tag-linux {
-        color: #60a5fa;
-        border-color: #60a5fa40;
-        background: rgba(96, 165, 250, 0.08);
-      }
-
-      .tag-net {
-        color: #fb923c;
-        border-color: #fb923c40;
-        background: rgba(251, 146, 60, 0.08);
-      }
-
-      .tag-web {
-        color: #f472b6;
-        border-color: #f472b640;
-        background: rgba(244, 114, 182, 0.08);
-      }
-
-      .tag-pentest {
-        color: #f87171;
-        border-color: #f8717140;
-        background: rgba(248, 113, 113, 0.08);
-      }
-
-      .tag-blue {
-        color: #38bdf8;
-        border-color: #38bdf840;
-        background: rgba(56, 189, 248, 0.08);
       }
     </style>
   </head>
   <body>
-    <h2 class="sr-only">Cyber Security Notes - folder index with search</h2>
-    <div class="shell">
-      <div class="header">
-        <div class="prompt-line">
-          <span class="prompt-sym">~/notes $</span>
-          <span style="font-size: 13px; color: var(--text-dim);">ls -la</span>
-          <span class="cursor"></span>
+    <div class="cursor" id="cursor"></div>
+    <div class="cursor-ring" id="cursor-ring"></div>
+
+    <nav id="nav">
+      <span class="nav-logo">~/sec-portfolio</span>
+      <ul class="nav-links">
+        <li><a href="#modules">Modules</a></li>
+        <li><a href="#plan">90-Day Plan</a></li>
+        <li><a href="#tools">Tools</a></li>
+        <li><a href="#terminal">Terminal</a></li>
+      </ul>
+    </nav>
+
+    <section class="hero" id="hero">
+      <div class="hero-bg"></div>
+      <div class="hero-grid"></div>
+      <div style="position: relative; z-index: 1;">
+        <p class="hero-tag">&#9632; Study Portfolio — Cyber Security</p>
+        <h1 class="hero-name">Cyber<em>Security</em></h1>
+        <p class="hero-role">
+          <span>Student</span> &nbsp;/&nbsp; <span>Researcher</span> &nbsp;/&nbsp; <span>Blue Team Operator</span>
+          &nbsp;—&nbsp; Building knowledge systematically.
+        </p>
+        <div class="hero-stats">
+          <div>
+            <div class="stat-num" data-target="7">0</div>
+            <div class="stat-label">Modules</div>
+          </div>
+          <div>
+            <div class="stat-num" data-target="90">0</div>
+            <div class="stat-label">Day Plan</div>
+          </div>
+          <div>
+            <div class="stat-num" data-target="24">0</div>
+            <div class="stat-label">Tools Studied</div>
+          </div>
+          <div>
+            <div class="stat-num" data-target="3">0</div>
+            <div class="stat-label">Certs Target</div>
+          </div>
         </div>
-        <h1 class="title"><span>Cyber Security</span> Notes</h1>
-        <p class="subtitle">Quick links to every file in this folder.</p>
       </div>
-
-      <div class="search-bar">
-        <i class="ti ti-search search-icon" aria-hidden="true"></i>
-        <input type="text" id="search" placeholder="Search folders..." aria-label="Search folders" />
+      <div class="hero-scroll">
+        <span class="scroll-text">Scroll</span>
+        <div class="scroll-line"></div>
       </div>
+    </section>
 
-      <p class="count" id="count"><span id="visible-count">7</span> of 7 folders</p>
+    <div class="divider"></div>
 
-      <div class="grid" id="grid" role="list">
-        <a class="card" href="/cryptography/" tabindex="0" data-tags="cryptography encryption hash cipher" role="listitem" style="animation-delay: 0.1s;">
-          <div class="card-top">
-            <span class="card-path">/cryptography/</span>
-            <span class="tag tag-crypto">foundations</span>
-          </div>
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <span class="card-desc">Cryptography foundations and <em>reference notes</em>.</span>
-            <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
-          </div>
-        </a>
-        <a class="card" href="/90-day-plan/" tabindex="0" data-tags="learning plan roadmap schedule study" role="listitem" style="animation-delay: 0.17s;">
-          <div class="card-top">
-            <span class="card-path">/90-day-plan/</span>
-            <span class="tag tag-ops">planning</span>
-          </div>
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <span class="card-desc">A structured <em>90-day learning plan</em>.</span>
-            <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
-          </div>
-        </a>
-        <a class="card" href="/linux-bash/" tabindex="0" data-tags="linux bash shell commands terminal scripting" role="listitem" style="animation-delay: 0.24s;">
-          <div class="card-top">
-            <span class="card-path">/linux-bash/</span>
-            <span class="tag tag-linux">linux</span>
-          </div>
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <span class="card-desc">Linux and Bash <em>commands for security work</em>.</span>
-            <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
-          </div>
-        </a>
-        <a class="card" href="/networking-fundamentals/" tabindex="0" data-tags="networking tcp ip protocols dns http" role="listitem" style="animation-delay: 0.31s;">
-          <div class="card-top">
-            <span class="card-path">/networking-fundamentals/</span>
-            <span class="tag tag-net">networking</span>
-          </div>
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <span class="card-desc">Core networking <em>concepts and protocols</em>.</span>
-            <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
-          </div>
-        </a>
-        <a class="card" href="/web-security-owasp/" tabindex="0" data-tags="web owasp xss sql injection csrf" role="listitem" style="animation-delay: 0.38s;">
-          <div class="card-top">
-            <span class="card-path">/web-security-owasp/</span>
-            <span class="tag tag-web">owasp</span>
-          </div>
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <span class="card-desc">OWASP-aligned <em>web security notes</em>.</span>
-            <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
-          </div>
-        </a>
-        <a class="card" href="/Penetration_testing/" tabindex="0" data-tags="penetration testing pentest exploit recon" role="listitem" style="animation-delay: 0.45s;">
-          <div class="card-top">
-            <span class="card-path">/Penetration_testing/</span>
-            <span class="tag tag-pentest">pentest</span>
-          </div>
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <span class="card-desc">Penetration testing <em>field manual and playbook</em>.</span>
-            <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
-          </div>
-        </a>
-        <a class="card" href="/blue_team_SOC/" tabindex="0" data-tags="blue team soc operations defense incident response" role="listitem" style="animation-delay: 0.52s;">
-          <div class="card-top">
-            <span class="card-path">/blue_team_SOC/</span>
-            <span class="tag tag-blue">blue team</span>
-          </div>
-          <div style="display: flex; align-items: center; justify-content: space-between;">
-            <span class="card-desc">Blue team operations and <em>SOC handbook</em>.</span>
-            <i class="ti ti-arrow-right arrow" aria-hidden="true"></i>
-          </div>
-        </a>
+    <section id="modules">
+      <p class="section-label">&#9632; 01 — Learning Modules</p>
+      <h2 class="section-title">Knowledge<br />Domains</h2>
+      <div class="modules-grid">
+        <div class="module-card">
+          <span class="module-icon">&#128272;</span>
+          <p class="module-name">/cryptography/</p>
+          <p class="module-desc">Symmetric &amp; asymmetric encryption, hashing algorithms, PKI, TLS/SSL internals.</p>
+          <div class="progress-label"><span>Progress</span><span>72%</span></div>
+          <div class="progress-bar"><div class="progress-fill" data-width="72"></div></div>
+        </div>
+
+        <div class="module-card">
+          <span class="module-icon">&#128467;</span>
+          <p class="module-name">/90-day-plan/</p>
+          <p class="module-desc">Structured roadmap: weekly milestones, lab sessions, and checkpoint assessments.</p>
+          <div class="progress-label"><span>Progress</span><span>45%</span></div>
+          <div class="progress-bar"><div class="progress-fill" data-width="45"></div></div>
+        </div>
+
+        <div class="module-card">
+          <span class="module-icon">&#128039;</span>
+          <p class="module-name">/linux-bash/</p>
+          <p class="module-desc">Shell scripting, file permissions, process management, network CLI tools.</p>
+          <div class="progress-label"><span>Progress</span><span>88%</span></div>
+          <div class="progress-bar"><div class="progress-fill" data-width="88"></div></div>
+        </div>
+
+        <div class="module-card">
+          <span class="module-icon">&#127760;</span>
+          <p class="module-name">/networking-fundamentals/</p>
+          <p class="module-desc">OSI model, TCP/IP stack, subnetting, DNS, HTTP/HTTPS, packet analysis.</p>
+          <div class="progress-label"><span>Progress</span><span>65%</span></div>
+          <div class="progress-bar"><div class="progress-fill" data-width="65"></div></div>
+        </div>
+
+        <div class="module-card">
+          <span class="module-icon">&#128376;</span>
+          <p class="module-name">/web-security-owasp/</p>
+          <p class="module-desc">OWASP Top 10, XSS, SQLi, CSRF, SSRF, authentication bypass techniques.</p>
+          <div class="progress-label"><span>Progress</span><span>55%</span></div>
+          <div class="progress-bar"><div class="progress-fill" data-width="55"></div></div>
+        </div>
+
+        <div class="module-card">
+          <span class="module-icon">&#127919;</span>
+          <p class="module-name">/Penetration_testing/</p>
+          <p class="module-desc">Recon, enumeration, exploitation, post-exploitation, reporting methodology.</p>
+          <div class="progress-label"><span>Progress</span><span>38%</span></div>
+          <div class="progress-bar"><div class="progress-fill" data-width="38"></div></div>
+        </div>
+
+        <div class="module-card">
+          <span class="module-icon">&#128737;</span>
+          <p class="module-name">/blue_team_SOC/</p>
+          <p class="module-desc">SIEM, log analysis, threat hunting, incident response playbooks, MITRE ATT&amp;CK.</p>
+          <div class="progress-label"><span>Progress</span><span>50%</span></div>
+          <div class="progress-bar"><div class="progress-fill" data-width="50"></div></div>
+        </div>
       </div>
-      <p class="no-results" id="no-results" aria-live="polite">
-        <i class="ti ti-folder-off" aria-hidden="true"></i>
-        No folders match your search.
+    </section>
+
+    <div class="divider"></div>
+
+    <section id="plan">
+      <p class="section-label">&#9632; 02 — Structured Roadmap</p>
+      <h2 class="section-title">90-Day<br />Plan</h2>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5rem;">
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <p class="timeline-week">Week 01–02</p>
+            <h3 class="timeline-title">Linux &amp; Networking Baseline</h3>
+            <p class="timeline-body">Core CLI skills, Bash scripting, OSI model, Wireshark packet capture labs.</p>
+            <div class="timeline-tags">
+              <span class="chip">bash</span><span class="chip">wireshark</span><span class="chip">tcp/ip</span>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <p class="timeline-week">Week 03–04</p>
+            <h3 class="timeline-title">Cryptography Foundations</h3>
+            <p class="timeline-body">AES, RSA, hashing, TLS handshake analysis, OpenSSL lab exercises.</p>
+            <div class="timeline-tags">
+              <span class="chip">openssl</span><span class="chip">aes</span><span class="chip">rsa</span>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <p class="timeline-week">Week 05–07</p>
+            <h3 class="timeline-title">Web Security &amp; OWASP</h3>
+            <p class="timeline-body">DVWA labs, Burp Suite interception, OWASP Top 10 writeups.</p>
+            <div class="timeline-tags">
+              <span class="chip">burpsuite</span><span class="chip">dvwa</span><span class="chip">owasp</span>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <p class="timeline-week">Week 08–10</p>
+            <h3 class="timeline-title">Penetration Testing Intro</h3>
+            <p class="timeline-body">Kali Linux, nmap scanning, Metasploit basics, CTF participation.</p>
+            <div class="timeline-tags">
+              <span class="chip">kali</span><span class="chip">nmap</span><span class="chip">ctf</span>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-dot"></div>
+            <p class="timeline-week">Week 11–13</p>
+            <h3 class="timeline-title">Blue Team &amp; SOC Ops</h3>
+            <p class="timeline-body">Splunk SIEM setup, log parsing, threat hunting with MITRE ATT&amp;CK navigator.</p>
+            <div class="timeline-tags">
+              <span class="chip">splunk</span><span class="chip">mitre</span><span class="chip">siem</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="terminal" id="term1">
+            <div class="term-bar">
+              <div class="term-dot t-red"></div>
+              <div class="term-dot t-yellow"></div>
+              <div class="term-dot t-green"></div>
+              <span class="term-title">study-tracker.sh</span>
+            </div>
+            <div class="term-body">
+              <div class="term-line"><span class="term-prompt">$</span><span class="term-cmd">./check_progress.sh</span></div>
+              <div class="term-out">Scanning modules...</div>
+              <div class="term-out">&nbsp;</div>
+              <div class="term-line"><span class="term-prompt">&#8594;</span><span class="term-success">&#10003; linux-bash &nbsp;&nbsp;&nbsp;&nbsp; [88%] ████████░░</span></div>
+              <div class="term-line"><span class="term-prompt">&#8594;</span><span class="term-success">&#10003; cryptography &nbsp; [72%] ███████░░░</span></div>
+              <div class="term-line"><span class="term-prompt">&#8594;</span><span class="term-success">&#10003; networking &nbsp;&nbsp;&nbsp; [65%] ██████░░░░</span></div>
+              <div class="term-line"><span class="term-prompt">&#8594;</span><span class="term-warn">&#9889; web-owasp &nbsp;&nbsp;&nbsp;&nbsp; [55%] █████░░░░░</span></div>
+              <div class="term-line"><span class="term-prompt">&#8594;</span><span class="term-warn">&#9889; blue-team &nbsp;&nbsp;&nbsp;&nbsp; [50%] █████░░░░░</span></div>
+              <div class="term-line"><span class="term-prompt">&#8594;</span><span class="term-warn">&#9889; pentest &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [38%] ████░░░░░░</span></div>
+              <div class="term-out">&nbsp;</div>
+              <div class="term-line"><span class="term-prompt">$</span><span class="term-cmd">echo "Day 42 / 90" &nbsp;<span class="type-cursor"></span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <section id="tools">
+      <p class="section-label">&#9632; 03 — Arsenal</p>
+      <h2 class="section-title">Tools &amp;<br />Technologies</h2>
+
+      <p style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); margin-bottom: 2rem;">
+        <span style="color: var(--green);">&#9632;</span> Proficient &nbsp;
+        <span style="color: var(--blue);">&#9632;</span> Learning &nbsp;
+        <span style="color: var(--red);">&#9632;</span> Planned &nbsp;
+        <span style="color: var(--gold);">&#9632;</span> Daily Use
       </p>
-    </div>
+
+      <div class="tools-flex" id="tools-flex">
+        <div class="tool-pill"><span class="tool-dot dot-gold"></span>Kali Linux</div>
+        <div class="tool-pill"><span class="tool-dot dot-gold"></span>Bash</div>
+        <div class="tool-pill"><span class="tool-dot dot-green"></span>Nmap</div>
+        <div class="tool-pill"><span class="tool-dot dot-green"></span>Wireshark</div>
+        <div class="tool-pill"><span class="tool-dot dot-green"></span>Burp Suite</div>
+        <div class="tool-pill"><span class="tool-dot dot-blue"></span>Metasploit</div>
+        <div class="tool-pill"><span class="tool-dot dot-blue"></span>Splunk</div>
+        <div class="tool-pill"><span class="tool-dot dot-blue"></span>OpenSSL</div>
+        <div class="tool-pill"><span class="tool-dot dot-blue"></span>John the Ripper</div>
+        <div class="tool-pill"><span class="tool-dot dot-blue"></span>Hashcat</div>
+        <div class="tool-pill"><span class="tool-dot dot-green"></span>Netcat</div>
+        <div class="tool-pill"><span class="tool-dot dot-green"></span>tcpdump</div>
+        <div class="tool-pill"><span class="tool-dot dot-red"></span>Ghidra</div>
+        <div class="tool-pill"><span class="tool-dot dot-red"></span>IDA Free</div>
+        <div class="tool-pill"><span class="tool-dot dot-blue"></span>DVWA</div>
+        <div class="tool-pill"><span class="tool-dot dot-blue"></span>TryHackMe</div>
+        <div class="tool-pill"><span class="tool-dot dot-red"></span>HackTheBox</div>
+        <div class="tool-pill"><span class="tool-dot dot-blue"></span>MITRE ATT&amp;CK</div>
+        <div class="tool-pill"><span class="tool-dot dot-red"></span>Cobalt Strike</div>
+        <div class="tool-pill"><span class="tool-dot dot-gold"></span>Git</div>
+        <div class="tool-pill"><span class="tool-dot dot-gold"></span>VS Code</div>
+        <div class="tool-pill"><span class="tool-dot dot-blue"></span>Docker</div>
+        <div class="tool-pill"><span class="tool-dot dot-blue"></span>Volatility</div>
+        <div class="tool-pill"><span class="tool-dot dot-red"></span>Autopsy (DFIR)</div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <section id="terminal">
+      <p class="section-label">&#9632; 04 — Lab Log</p>
+      <h2 class="section-title">Recent<br />Sessions</h2>
+
+      <div class="terminal" id="term2">
+        <div class="term-bar">
+          <div class="term-dot t-red"></div>
+          <div class="term-dot t-yellow"></div>
+          <div class="term-dot t-green"></div>
+          <span class="term-title">lab-session-42.log</span>
+        </div>
+        <div class="term-body">
+          <div class="term-line"><span class="term-prompt">$</span><span class="term-cmd">nmap -sV -sC -oA scan 10.10.10.5</span></div>
+          <div class="term-out">Starting Nmap 7.94 at 2025-05-14 20:31</div>
+          <div class="term-out">Nmap scan report for 10.10.10.5</div>
+          <div class="term-line"><span class="term-prompt">&#8594;</span><span class="term-success">22/tcp  open  ssh     OpenSSH 8.2</span></div>
+          <div class="term-line"><span class="term-prompt">&#8594;</span><span class="term-success">80/tcp  open  http    Apache 2.4.41</span></div>
+          <div class="term-line"><span class="term-prompt">&#8594;</span><span class="term-warn">3306/tcp open  mysql   MySQL 5.7.33</span></div>
+          <div class="term-out">&nbsp;</div>
+          <div class="term-line"><span class="term-prompt">$</span><span class="term-cmd">gobuster dir -u http://10.10.10.5 -w /wordlist/common.txt</span></div>
+          <div class="term-line"><span class="term-prompt">&#8594;</span><span class="term-success">/admin &nbsp; (Status: 301)</span></div>
+          <div class="term-line"><span class="term-prompt">&#8594;</span><span class="term-success">/login &nbsp; (Status: 200)</span></div>
+          <div class="term-line"><span class="term-prompt">&#8594;</span><span class="term-success">/uploads (Status: 301)</span></div>
+          <div class="term-out">&nbsp;</div>
+          <div class="term-line"><span class="term-prompt">$</span><span class="term-cmd">sqlmap -u "http://10.10.10.5/login" --dbs --batch</span></div>
+          <div class="term-line"><span class="term-prompt">&#8594;</span><span class="term-warn">&#9889; Parameter 'username' appears to be injectable</span></div>
+          <div class="term-line"><span class="term-prompt">&#8594;</span><span class="term-success">&#10003; Found database: webapp_db</span></div>
+          <div class="term-out">&nbsp;</div>
+          <div class="term-line"><span class="term-prompt">$</span><span class="term-cmd">cat flag.txt &nbsp;<span class="type-cursor"></span></span></div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div>
+        <div class="footer-brand">CySec Study</div>
+        <p style="font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 4px;">
+          Built for learning. Ethical hacking only.
+        </p>
+      </div>
+      <p class="footer-note">~/sec-portfolio &nbsp;|&nbsp; Day 42 of 90 &nbsp;|&nbsp; 2025</p>
+    </footer>
 
     <script>
-      const input = document.getElementById("search");
-      const cards = document.querySelectorAll(".card");
-      const visibleCount = document.getElementById("visible-count");
-      const noResults = document.getElementById("no-results");
+      const cursor = document.getElementById("cursor");
+      const ring = document.getElementById("cursor-ring");
+      let mx = 0;
+      let my = 0;
+      let rx = 0;
+      let ry = 0;
 
-      input.addEventListener("input", () => {
-        const q = input.value.toLowerCase().trim();
-        let shown = 0;
-        cards.forEach((card) => {
-          const text = (
-            card.querySelector(".card-path").textContent +
-            " " +
-            card.querySelector(".card-desc").textContent +
-            " " +
-            (card.dataset.tags || "")
-          ).toLowerCase();
-          const match = !q || text.includes(q);
-          card.style.display = match ? "block" : "none";
-          if (match) {
-            shown += 1;
-          }
-        });
-        visibleCount.textContent = shown;
-        noResults.style.display = shown === 0 ? "block" : "none";
+      document.addEventListener("mousemove", (event) => {
+        mx = event.clientX;
+        my = event.clientY;
+        cursor.style.left = `${mx}px`;
+        cursor.style.top = `${my}px`;
       });
 
-      document.querySelectorAll(".card").forEach((card) => {
-        card.addEventListener("click", (event) => {
-          card.style.transform = "scale(0.98)";
-          setTimeout(() => {
-            card.style.transform = "";
-          }, 150);
+      (function animRing() {
+        rx += (mx - rx) * 0.12;
+        ry += (my - ry) * 0.12;
+        ring.style.left = `${rx}px`;
+        ring.style.top = `${ry}px`;
+        requestAnimationFrame(animRing);
+      })();
+
+      document.querySelectorAll("a, .module-card, .tool-pill").forEach((el) => {
+        el.addEventListener("mouseenter", () => {
+          cursor.style.width = "18px";
+          cursor.style.height = "18px";
+          ring.style.width = "50px";
+          ring.style.height = "50px";
         });
-        card.addEventListener("keydown", (event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            card.click();
+        el.addEventListener("mouseleave", () => {
+          cursor.style.width = "12px";
+          cursor.style.height = "12px";
+          ring.style.width = "36px";
+          ring.style.height = "36px";
+        });
+      });
+
+      window.addEventListener("scroll", () => {
+        document.getElementById("nav").classList.toggle("scrolled", window.scrollY > 40);
+      });
+
+      function animCount(el, target, duration) {
+        let start = 0;
+        let startTime = null;
+
+        function step(ts) {
+          if (!startTime) {
+            startTime = ts;
           }
-        });
+          const progress = Math.min((ts - startTime) / duration, 1);
+          el.textContent = Math.round(progress * target);
+          if (progress < 1) {
+            requestAnimationFrame(step);
+          } else {
+            el.textContent = target;
+          }
+        }
+
+        requestAnimationFrame(step);
+      }
+
+      const io = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) {
+              return;
+            }
+            const el = entry.target;
+
+            if (el.dataset.target) {
+              animCount(el, Number.parseInt(el.dataset.target, 10), 1200);
+              io.unobserve(el);
+              return;
+            }
+
+            if (el.classList.contains("module-card")) {
+              el.classList.add("visible");
+              el.querySelectorAll(".progress-fill").forEach((bar) => {
+                setTimeout(() => {
+                  bar.style.width = `${bar.dataset.width}%`;
+                }, 200);
+              });
+              io.unobserve(el);
+              return;
+            }
+
+            el.classList.add("visible");
+            io.unobserve(el);
+          });
+        },
+        { threshold: 0.15 }
+      );
+
+      document.querySelectorAll("[data-target]").forEach((el) => io.observe(el));
+      document.querySelectorAll(".module-card, .timeline-item, .terminal, .tool-pill").forEach((el, i) => {
+        if (el.classList.contains("tool-pill")) {
+          el.style.transitionDelay = `${i * 0.04}s`;
+        }
+        io.observe(el);
       });
     </script>
   </body>

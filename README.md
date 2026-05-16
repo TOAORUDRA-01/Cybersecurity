@@ -32,3 +32,4 @@ Deploy the folder as a static site (e.g., Vercel, Netlify, GitHub Pages). The cl
 - /linux-bash/
 - /networking-fundamentals/
 - /web-security-owasp/
+- /malware_analysis/

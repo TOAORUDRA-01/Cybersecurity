@@ -264,6 +264,9 @@
         opacity: 0;
         transform: translateY(20px);
         transition: background 0.25s, opacity 0.6s ease, transform 0.6s ease;
+        text-decoration: none;
+        color: inherit;
+        display: block;
       }
 
       .module-card.visible {
@@ -284,6 +287,11 @@
 
       .module-card:hover {
         background: var(--dark3);
+      }
+
+      .module-card:focus-visible {
+        outline: 2px solid var(--gold);
+        outline-offset: 2px;
       }
 
       .module-card:hover::after {
@@ -797,61 +805,61 @@
       <p class="section-label">&#9632; 01 — Learning Modules</p>
       <h2 class="section-title">Knowledge<br />Domains</h2>
       <div class="modules-grid">
-        <div class="module-card">
+        <a class="module-card" href="/cryptography/">
           <span class="module-icon">&#128272;</span>
           <p class="module-name">/cryptography/</p>
           <p class="module-desc">Symmetric &amp; asymmetric encryption, hashing algorithms, PKI, TLS/SSL internals.</p>
           <div class="progress-label"><span>Progress</span><span>72%</span></div>
           <div class="progress-bar"><div class="progress-fill" data-width="72"></div></div>
-        </div>
+        </a>
 
-        <div class="module-card">
+        <a class="module-card" href="/90-day-plan/">
           <span class="module-icon">&#128467;</span>
           <p class="module-name">/90-day-plan/</p>
           <p class="module-desc">Structured roadmap: weekly milestones, lab sessions, and checkpoint assessments.</p>
           <div class="progress-label"><span>Progress</span><span>45%</span></div>
           <div class="progress-bar"><div class="progress-fill" data-width="45"></div></div>
-        </div>
+        </a>
 
-        <div class="module-card">
+        <a class="module-card" href="/linux-bash/">
           <span class="module-icon">&#128039;</span>
           <p class="module-name">/linux-bash/</p>
           <p class="module-desc">Shell scripting, file permissions, process management, network CLI tools.</p>
           <div class="progress-label"><span>Progress</span><span>88%</span></div>
           <div class="progress-bar"><div class="progress-fill" data-width="88"></div></div>
-        </div>
+        </a>
 
-        <div class="module-card">
+        <a class="module-card" href="/networking-fundamentals/">
           <span class="module-icon">&#127760;</span>
           <p class="module-name">/networking-fundamentals/</p>
           <p class="module-desc">OSI model, TCP/IP stack, subnetting, DNS, HTTP/HTTPS, packet analysis.</p>
           <div class="progress-label"><span>Progress</span><span>65%</span></div>
           <div class="progress-bar"><div class="progress-fill" data-width="65"></div></div>
-        </div>
+        </a>
 
-        <div class="module-card">
+        <a class="module-card" href="/web-security-owasp/">
           <span class="module-icon">&#128376;</span>
           <p class="module-name">/web-security-owasp/</p>
           <p class="module-desc">OWASP Top 10, XSS, SQLi, CSRF, SSRF, authentication bypass techniques.</p>
           <div class="progress-label"><span>Progress</span><span>55%</span></div>
           <div class="progress-bar"><div class="progress-fill" data-width="55"></div></div>
-        </div>
+        </a>
 
-        <div class="module-card">
+        <a class="module-card" href="/Penetration_testing/">
           <span class="module-icon">&#127919;</span>
           <p class="module-name">/Penetration_testing/</p>
           <p class="module-desc">Recon, enumeration, exploitation, post-exploitation, reporting methodology.</p>
           <div class="progress-label"><span>Progress</span><span>38%</span></div>
           <div class="progress-bar"><div class="progress-fill" data-width="38"></div></div>
-        </div>
+        </a>
 
-        <div class="module-card">
+        <a class="module-card" href="/blue_team_SOC/">
           <span class="module-icon">&#128737;</span>
           <p class="module-name">/blue_team_SOC/</p>
           <p class="module-desc">SIEM, log analysis, threat hunting, incident response playbooks, MITRE ATT&amp;CK.</p>
           <div class="progress-label"><span>Progress</span><span>50%</span></div>
           <div class="progress-bar"><div class="progress-fill" data-width="50"></div></div>
-        </div>
+        </a>
       </div>
     </section>
 
